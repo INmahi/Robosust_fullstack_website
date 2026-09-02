@@ -1,6 +1,7 @@
 import type { FieldConfig } from "@/lib/admin/content-types";
 import type { GenericRow } from "@/lib/admin/generic-store";
 import { fieldValueToInputString } from "@/lib/admin/form-parsing";
+import { ImageUrlField } from "./image-url-field";
 
 // Renders one <input>/<textarea>/<checkbox> per field config. Shared by the
 // new and edit routes so both stay in sync as content-types.ts grows.
@@ -26,6 +27,18 @@ export function ContentFormFields({
               />
               {field.label}
             </label>
+          );
+        }
+
+        if (field.kind === "image-url") {
+          return (
+            <ImageUrlField
+              key={field.key}
+              name={field.key}
+              label={field.label}
+              required={field.required}
+              defaultValue={value}
+            />
           );
         }
 
