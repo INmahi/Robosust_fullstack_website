@@ -1,0 +1,21 @@
+{
+  "name": "@robosust/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./admin": "./src/admin.ts",
+    "./middleware": "./src/middleware.ts",
+    "./types": "./src/database.types.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.58.0",
+    "server-only": "^0.0.1"
+  },
+  "peerDependencies": {
+    "next": ">=15"
+  }
+}
