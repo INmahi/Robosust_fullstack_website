@@ -22,6 +22,7 @@ const socialFields: { key: string; label: string }[] = [
   { key: "social_youtube", label: "YouTube URL" },
   { key: "social_linkedin", label: "LinkedIn URL" },
   { key: "social_github", label: "GitHub URL" },
+  { key: "social_whatsapp", label: "WhatsApp URL (e.g. https://wa.me/8801...)" },
 ];
 
 const contactFields: { key: string; label: string }[] = [
@@ -43,7 +44,8 @@ export default async function SettingsPage({
     <div className="max-w-2xl">
       <h1 className={pageHeadingClass}>Site Settings</h1>
       <p className={`${pageSubtextClass} mb-6`}>
-        The single global row every page&apos;s shell (navbar, footer, contact block) reads from.
+        The single global row every page&apos;s shell (navbar, hero social icons, footer, contact block) reads
+        from — social links only need updating here, once, to change everywhere they appear.
       </p>
 
       {success && <p className={`${alertSuccessClass} mb-4`}>Saved.</p>}

@@ -21,6 +21,7 @@ export async function updateSiteSettingsAction(formData: FormData) {
     social_linkedin: get("social_linkedin"),
     social_instagram: get("social_instagram"),
     social_github: get("social_github"),
+    social_whatsapp: get("social_whatsapp"),
     contact_email: get("contact_email"),
     contact_phone: get("contact_phone"),
     contact_address: get("contact_address"),

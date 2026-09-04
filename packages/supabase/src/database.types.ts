@@ -51,6 +51,7 @@ export interface Database {
           social_linkedin: string | null;
           social_instagram: string | null;
           social_github: string | null;
+          social_whatsapp: string | null;
           contact_email: string | null;
           contact_phone: string | null;
           contact_address: string | null;
