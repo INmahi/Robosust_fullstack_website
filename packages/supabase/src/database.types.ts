@@ -49,11 +49,15 @@ export interface Database {
           social_facebook: string | null;
           social_youtube: string | null;
           social_linkedin: string | null;
+          social_instagram: string | null;
+          social_github: string | null;
           contact_email: string | null;
           contact_phone: string | null;
           contact_address: string | null;
           map_embed_url: string | null;
           recruitment_open: boolean;
+          footer_note: string | null;
+          background_image_url: string | null;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["site_settings"]["Row"]>;
@@ -82,17 +86,36 @@ export interface Database {
         Row: {
           id: string;
           section_key: string;
+          eyebrow: string | null;
           heading: string | null;
           subheading: string | null;
+          body: string | null;
           background_image_url: string | null;
+          secondary_image_url: string | null;
           stat_text: string | null;
           cta_text: string | null;
           cta_url: string | null;
+          secondary_cta_text: string | null;
+          secondary_cta_url: string | null;
           visible: boolean;
           sort_order: number;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["home_sections"]["Row"]> & { section_key: string };
         Update: Partial<Database["public"]["Tables"]["home_sections"]["Insert"]>;
+        Relationships: [];
+      };
+      home_section_items: {
+        Row: {
+          id: string;
+          section_id: string;
+          value: string | null;
+          label: string | null;
+          body: string | null;
+          image_url: string | null;
+          sort_order: number;
+        } & Timestamped;
+        Insert: Partial<Database["public"]["Tables"]["home_section_items"]["Row"]> & { section_id: string };
+        Update: Partial<Database["public"]["Tables"]["home_section_items"]["Insert"]>;
         Relationships: [];
       };
       seo_metadata: {
@@ -145,6 +168,7 @@ export interface Database {
           description: string | null;
           body: string | null;
           images: string[];
+          cover_image_url: string | null;
           status: "ongoing" | "completed" | "upcoming";
           flagship: boolean;
           category: string | null;
@@ -182,6 +206,7 @@ export interface Database {
           excerpt: string | null;
           image_url: string | null;
           author: string | null;
+          category: string | null;
           published: boolean;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["blog_posts"]["Row"]> & { slug: string; title: string };
