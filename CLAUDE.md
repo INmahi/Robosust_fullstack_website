@@ -5,9 +5,10 @@ Monorepo for the RoboSUST website rebuild (Phase 1: CMS + public site; Phase 2, 
 ## Planning docs (repo root)
 
 - [SRS.md](SRS.md) — formal Software Requirements Spec: phases, data model, roles, Phase 2 EC Portal design.
-- [frontend-overview.md](frontend-overview.md) — agreed sitemap and content list ("what the site contains"); the source of truth for Phase 1 content types, superseding a couple of SRS details (e.g. site is light-first, not dark).
+- [frontend-overview.md](frontend-overview.md) — agreed sitemap and content list ("what the site contains" — pages, sections, content types). **Not the source of truth for visual design/theme** — its "light-first" recommendation was superseded 2026-09-02 when the user provided an actual reference frontend (dark-themed); ignore this doc's palette/theme section, keep using it for sitemap and content-type completeness.
+- [synapse6/robosust_frontend](https://github.com/synapse6/robosust_frontend) (external repo) — the actual visual/design reference, dark-themed. As of 2026-09-02 it's homepage-only (hardcoded Hero/About/Events/Projects/Achievements/Blog sections), Next.js 14/React 18/Tailwind v3 — not yet ported into this monorepo or wired to `src/lib/content/*`.
 - [plans.md](plans.md) — earlier discussion log; superseded on sequencing by SRS v2.0 (CMS ships before, not after, the EC Portal) but still useful for the schema-namespacing rationale (`cms_users` vs. future `members`).
-- [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — this build's plan + status + "next steps to go live".
+- [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — **the living plan/status doc, read this first.** Phase 1a (backend/CMS) is done; it now carries the step-by-step plan for Phase 1b (porting the reference frontend and wiring it to the CMS), the design→CMS field mapping, the `0002` schema gaps, and open questions.
 
 ## `packages/supabase` — shared Supabase client package
 

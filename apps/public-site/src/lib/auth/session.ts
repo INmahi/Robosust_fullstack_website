@@ -18,7 +18,10 @@ export async function login(username: string, password: string): Promise<LoginRe
   const { data: cmsUser, error: lookupError } = await admin
     .from("cms_users")
     .select("email")
-    .eq("username", username)
+    // usernames are stored lowercased (see admin-actions.ts createCmsUser /
+    // scripts/seed-cms-users.mjs) — normalize here too, or a mixed-case
+    // username at login never matches what's on file.
+    .eq("username", username.trim().toLowerCase())
     .maybeSingle();
 
   if (lookupError || !cmsUser) {

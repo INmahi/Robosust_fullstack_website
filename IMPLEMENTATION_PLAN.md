@@ -1,99 +1,168 @@
-# Phase 1 backend: complete DB + server-side backbone, frontend-agnostic
+# RoboSUST Phase 1 — implementation plan
 
-> **Status: built, not yet live.** Everything below was implemented in this pass (see `CLAUDE.md` for the file-by-file registry). It compiles, lints, and builds clean, and has been smoke-tested against the real Supabase project (confirmed real API connectivity — the only failure so far is the expected "table not found," because the migration hasn't been applied yet). **Nothing here works end-to-end until the two steps in "Next steps to go live" below are done.**
+> **Status (2026-09-04)**
+> - **Phase 1a — backend/CMS: built, verified, committed.** Schema, RLS, auth, typed content API, generic admin CRUD, Cloudflare R2 upload. See "Phase 1a" below for what exists.
+> - **Phase 1b — public frontend: NOT started. This document's step-by-step plan covers it.**
+> - **Live database is still empty** (`public` schema, 0 tables — verified via Supabase MCP). Migration `0001_init.sql` has never been applied. This is step 1.
 
-## Context
+---
 
-Previous session context was lost, so this plan is written to be self-contained and persisted **inside the repo** (not just Claude's local plan storage), so it survives future session loss too. Source docs: [SRS.md](SRS.md) (formal spec) and [frontend-overview.md](frontend-overview.md) (agreed sitemap/content list) — both already agreed, both final on *what the site contains*. The visual frontend is explicitly **not final** and still churning.
+## 1. Where things stand
 
-Given that, the user's direction for this pass: stop waiting on frontend design. **Fully build out the database and server-side backend now** — schema, RLS, auth, and a typed content API — so that whenever a reference frontend (site + repo) is handed over later, the work is *wiring that frontend's pages to an already-complete backend*, not designing the backend around whatever the frontend happens to assume. The backend must be correct and complete on its own, independent of any particular UI.
+**Backend (done, in `main`):**
+- `apps/public-site/supabase/migrations/0001_init.sql` — 17 content tables + `cms_users`, RLS on everything, seeded `agp_blocks`. Written, **not yet applied**.
+- `packages/supabase` — browser/server/admin clients + hand-authored `database.types.ts`.
+- `src/lib/auth/*` — username/password auth, no email dependency (synthetic `@cms.internal.robosust` addresses), self-service password change, admin-triggered resets.
+- `src/lib/content/*` — typed CRUD + public-filtered reads for every content type. **This is the contract the frontend consumes.**
+- `src/app/admin/*` — generic schema-driven CRUD for all types, `/admin/settings` singleton, `/admin/users`.
+- `src/lib/storage/*` — Cloudflare R2 upload, auth-gated, wired into every image field. **Verified end-to-end against the live bucket** (PUT/GET/public-fetch/DELETE all pass).
 
-Confirmed direction (this session):
-- Backend = the already-provisioned Supabase project (Postgres + Auth + Storage), accessed through a typed content layer (`src/lib/content/*`) — never raw Supabase calls scattered through UI code. This is what makes it pluggable to *any* future frontend without rework, and matches how professional headless-backend setups decouple frontend from backend (discussed and confirmed in this session).
-- CMS/admin lives inside `apps/public-site` as role-gated `/admin` routes (not a separate app).
-- Auth is username + password (not email-based) — Supabase's email sending hits rate limits; login and password reset must not depend on it.
-- Live Supabase from the start, not mock data.
-- CMS access for now: 3 people, but the permission model must not hardcode who they are — adding a person is a data insert, not a schema change.
-- **New this turn**: build the *entire* backend surface for all Phase 1 content types now (schema + RLS + typed read/write functions for every type in frontend-overview.md §8), not just one reference example. Admin UI is scoped down to what's needed to operate the system (auth, account, user management, and a generic schema-driven CRUD screen reused across all content types) rather than bespoke per-type UI — that can be redone/restyled freely later since it isn't the public-facing design.
+**Infrastructure:**
+- Supabase project `robosust-platform` (`pjhgpbjnfkypdosigopv`) — ACTIVE_HEALTHY, reachable via MCP with full access as of 2026-09-04.
+- Cloudflare R2 bucket `robosust-media` — live, public URL `https://pub-5bce015397ff4317a30d01acabd8ae01.r2.dev`, credentials in `.env.local` (gitignored).
 
-## What "done" means for this pass
+**Design reference:** [`synapse6/robosust_frontend`](https://github.com/synapse6/robosust_frontend) — Next.js 14 / React 18 / Tailwind v3, **dark theme**, single homepage. Fully static: every section holds a hardcoded array. This plan ports it **1:1** into `apps/public-site` and wires it to the CMS. frontend-overview.md governs *which pages/content exist*, **not** the visual theme (superseded — dark is correct).
 
-Anyone (this session or a future one, or a different frontend) can:
-1. Call a typed function from `src/lib/content/*` for any Phase 1 content type and get/set real data in Supabase, correctly permissioned.
-2. Log in at `/admin` with a username/password, manage content through a generic CRUD screen, manage other CMS users, and reset a password — all without Supabase ever sending an email.
-3. Read `CLAUDE.md` (repo root) and this plan file to understand what exists and why, without needing this conversation's history.
+---
 
-## Architecture
+## 2. What the reference design needs, mapped to our CMS
 
-**New shared package** — `packages/supabase`:
-- `src/client.ts` — browser client
-- `src/server.ts` — cookie-based server client (Server Components/Actions, `@supabase/ssr`)
-- `src/admin.ts` — service-role client, server-only, used only by auth (username→email resolution, password resets) and admin user management
-- `src/database.types.ts` — hand-authored types matching the schema (regenerate later via `supabase gen types` once the CLI is linked to the project)
+| Design element | Data source | Status |
+|---|---|---|
+| Header nav (Home/Event/Projects/Blog/Forum) | `navigation_items` (group=primary) | ✅ exists |
+| Header socials (Facebook, Instagram, GitHub) | `site_settings` | ⚠️ has fb/youtube/linkedin — **needs instagram + github** |
+| Mobile menu | — | ⚠️ reference just calls `alert()` — **must be built for real** |
+| Hero: eyebrow, title, tagline, 2 CTAs, bg image | `home_sections['hero']` | ⚠️ **needs `eyebrow`, `body`, second CTA pair** |
+| Hero canvas particle effect | pure design (client component) | ✅ port as-is |
+| Featured event: image/title/desc/date/venue/category/CTA | `events` (next upcoming) | ✅ maps cleanly |
+| About: eyebrow, title, desc, body, 2 images | `home_sections['about']` | ⚠️ **needs `body`, `secondary_image_url`** |
+| About: 3 stats (01 Think / 02 Build / 03 Compete) | — | ⚠️ **needs repeatable child rows** |
+| Projects: 3 cards (category/title/desc/image) | `projects` via `getFlagshipProjects(3)` | ⚠️ card image should be **`cover_image_url`**, not `images[0]` |
+| Achievements: featured milestone card | `achievements` (top row) | ✅ title/description/image_url |
+| Achievements: 2 metric cards ("12+", "24/7") | — | ⚠️ **needs repeatable child rows** |
+| Blog: 3 cards with "Build log / 08.26" label | `blog_posts` via `getPublishedBlogPosts(3)` | ⚠️ **needs `category`** (label = `{category} / {MM.YY}`) |
+| Footer: wordmark, tagline, links, copyright | `site_settings` + `navigation_items` (group=footer) | ⚠️ **needs `footer_note`** |
+| Page background image (fixed, full-site) | hardcoded Unsplash URL | ⚠️ **needs `site_settings.background_image_url`** |
 
-**`apps/public-site/supabase/migrations/*.sql`** — full schema, hand-written (no Supabase CLI in this environment; user applies via the Supabase SQL editor, or installs the CLI later). Organized by domain:
-- Shell/config: `site_settings` (singleton), `navigation_items`, `home_sections`, `seo_metadata`
-- Content: `notices`, `achievements`, `projects` (absorbs Initiatives, `flagship` flag), `events` (generalized Workshop, `category` field), `blog_posts`, `committee_members`, `alumni`, `gallery_albums` + `gallery_images`, `agp_blocks` (key/type/jsonb content + per-block visibility — SRS defines no AGP schema at all; frontend-overview §6.2 does)
-- Community: `forum_categories` / `forum_posts` / `forum_replies`
-- Operational: `contact_submissions`
-- Access: `cms_users` (see below)
+**Decision — the wordmark stays in code.** `ROBO` + red `SUST` is branding/typography, not editable content. `site_settings.site_name` drives everything else (metadata, alt text).
 
-**RLS, applied uniformly**: public `SELECT` on published/non-expired rows only (e.g. `notices.expires_at`, `blog_posts.published`); `INSERT`/`UPDATE`/`DELETE` only when `auth.uid()` has a row in `cms_users`. No per-type permission distinctions yet — all CMS users get equal write access everywhere (matches "don't bother about fine-grained control yet, but stay extensible").
+**Decision — the featured event auto-picks the next upcoming event** by date rather than adding a `featured` flag. Fewer knobs, less for editors to get wrong. Revisit if they want manual control.
 
-**`cms_users`** (named apart from `profiles`/`members` to avoid colliding with Phase 2's future EC-portal `members` table, per the schema-namespacing discipline already agreed in `plans.md`): `id (FK auth.users)`, `username` (unique), `full_name`, `role` (free-text label, default `'editor'`, descriptive only for now), `must_change_password` (bool), `created_at`.
+---
 
-**Username/password auth, no email dependency**:
-- Each `cms_users` row maps to a synthetic, non-deliverable email (`<username>@cms.internal.robosust`) — Supabase Auth requires an email-shaped identifier, but nothing is ever sent to it.
-- **Login**: server action resolves username → synthetic email via the admin client, calls `signInWithPassword` server-side, sets the session cookie.
-- **Self-service password change** (logged in, `/admin/account`): `auth.updateUser({password})` on the session-bound server client.
-- **Forgot-password**: no email recovery. An admin-role user, from `/admin/users`, resets via the admin client (`auth.admin.updateUserById`), shown once on screen to relay manually, with `must_change_password` forcing a change on next login. Sidesteps Supabase's email rate limits entirely; extensible to real email recovery later without restructuring.
+## 3. Migration `0002` — schema additions
 
-**The content layer, `src/lib/content/<type>.ts`** — one module per content type, each exporting typed read *and* write functions (e.g. `getNotices()`, `getNoticeById()`, `createNotice()`, `updateNotice()`, `deleteNotice()`, `getPublishedNotices()` for the public-facing filtered view). This is the actual deliverable of "fix the backend so any frontend can plug in" — every future page, admin screen, or rewritten frontend calls these functions and nothing else touches Supabase directly.
+| Table | Add |
+|---|---|
+| `home_sections` | `eyebrow text`, `body text`, `secondary_image_url text`, `secondary_cta_text text`, `secondary_cta_url text` |
+| `home_section_items` | **new table** — `id`, `section_id` FK→`home_sections` (cascade), `value text`, `label text`, `body text`, `image_url text`, `sort_order int`, timestamps. Powers About's 3 stats and Achievements' 2 metrics. |
+| `projects` | `cover_image_url text` |
+| `blog_posts` | `category text` |
+| `site_settings` | `social_instagram text`, `social_github text`, `footer_note text`, `background_image_url text` |
 
-**Admin UI, kept minimal and generic** (not the public-facing design, so building it now doesn't fight the still-churning frontend):
-- `/admin/login`, `/admin/layout.tsx` (auth+role gate), `/admin/account` (password change), `/admin/users` (admin-only: create users, trigger resets)
-- `/admin/[type]` — **one generic, schema-driven list/form component** parameterized by a per-type field config (labels, input kinds, required flags), reused across all content types instead of 15 bespoke builds. This gives a working way to enter content today without depending on final visual design.
+Same RLS pattern as everything else: public `SELECT`, writes require a `cms_users` row. `packages/supabase/src/database.types.ts` must be updated in the same commit (hand-authored — keep it in sync).
 
-## Build order
+---
 
-1. `packages/supabase` — client factories + `database.types.ts`.
-2. Full migration SQL — every table above + RLS + `cms_users`. Hand off to the user to run in the Supabase SQL editor.
-3. Auth backend: username→email resolution, login action, `requireCmsUser()` guard, `/admin/login`, `/admin/account`, `/admin/users`.
-4. `src/lib/content/*` — full typed read/write layer for every content type listed above.
-5. Generic schema-driven `/admin/[type]` CRUD screen, wired to the content layer, config-driven per type.
-6. Seed the 3 initial `cms_users` (admin/service-role one-off script), confirm login end-to-end.
-7. Persist durable docs **in the repo**: this plan saved as `IMPLEMENTATION_PLAN.md` (repo root), plus `CLAUDE.md` (repo root) as a running file registry — every meaningful file/folder with a one-line purpose, covering the planning docs, `packages/supabase`, the migrations, `src/lib/content/*`, `src/lib/auth/*`, and the `/admin` tree. Updated as each piece lands, not just once at the end.
-8. Not in this pass: any public-facing page redesign — that's deliberately deferred until a reference frontend is provided, at which point its pages get wired to the already-complete `src/lib/content/*` functions.
+## 4. Step-by-step
 
-## Verification
+Each step ends in a working, committable state. Commits stay small (one per step, or finer).
 
-- Apply the migration SQL against the live Supabase project; confirm tables + RLS in the Supabase dashboard.
-- Seed 3 `cms_users` rows with initial passwords.
-- `npm run dev`: log in at `/admin/login`, confirm redirect to `/admin`; confirm unauthenticated access to `/admin` redirects to login.
-- Create/edit/delete a row of at least 2-3 different content types through the generic `/admin/[type]` screen; confirm each round-trips through `src/lib/content/<type>.ts` correctly (including the public-filtered read, e.g. an expired notice or unpublished blog post not appearing in `getPublished...()`).
-- Self-service password change from `/admin/account`; admin-triggered reset from `/admin/users` for a second seeded user — confirm neither triggers a Supabase email send.
-- `npm run lint` / `npm run type-check` across the workspace.
+### Step 1 — Bring the database live
+1. Apply `0001_init.sql` via Supabase MCP `apply_migration`.
+2. Verify with `list_tables` (expect 18 tables) and spot-check RLS via `get_advisors`.
+3. Seed the 3 **development** CMS accounts via `scripts/seed-cms-users.mjs`, all with `role = 'admin'`:
 
-## Next steps to go live
+   | Username | Full name |
+   |---|---|
+   | `yakSafu122` | Md Yak Safu |
+   | `MollahHamza22444` | Mollah Omor Hamza |
+   | `inMahi787` | Ishat Noor Mahi |
 
-1. **Apply the migration.** Open the Supabase dashboard → SQL Editor → paste the contents of `apps/public-site/supabase/migrations/0001_init.sql` → run. Creates every Phase 1 table, RLS policies, and seeds the 7 fixed `agp_blocks` rows.
-2. **Seed the 3 CMS users.** Edit the `USERS` array at the top of `apps/public-site/scripts/seed-cms-users.mjs` with real names, then from `apps/public-site/` run:
-   ```
-   node --env-file=.env.local scripts/seed-cms-users.mjs
-   ```
-   Prints each username's one-time temp password — relay manually, no email is sent. Each account is forced to set its own password on first login.
-3. `npm run dev` from the repo root, then sign in at `/admin/login`.
+   All three get `admin` deliberately: during development the point is that each person can exercise *the whole* CMS, including user management. These are **throwaway accounts** — real accounts get created fresh once the platform is ready (see "Account lifecycle" below), so nothing here needs to reflect actual committee designations.
+4. **Verify:** log in as each; confirm the forced password change on first login. Then exercise the handover flow itself — create a 4th test user from `/admin/users`, log in as them, change their password, delete them. That flow *is* the club's yearly onboarding mechanism, so it needs to work before anything is built on top of it.
 
-## What's built vs. deferred
+#### Account lifecycle (the model this has to support long-term)
+Each time a new Executive Committee is formed, an existing admin (outgoing president, or whoever holds the role) creates accounts for the incoming members from `/admin/users` and hands each person their username + one-time temporary password; the member changes it themselves at `/admin/account`. No email is involved at any point — which is exactly why auth was built on synthetic addresses.
 
-Built in this pass: every item in "Architecture" above, for all 17 Phase 1 content types (`notices`, `achievements`, `projects`, `events`, `blog_posts`, `committee_members`, `alumni`, `gallery_albums`, `gallery_images`, `agp_blocks`, `navigation_items`, `home_sections`, `seo_metadata`, `forum_categories`, `forum_posts`, `forum_replies`, `contact_submissions`), plus `site_settings` as a dedicated singleton page (`/admin/settings`, not part of the generic `/admin/[type]` router). The homepage (`/`) is wired to `getActiveNotices()` + `getSiteSettings()` as a deliberately minimal proof of the read path — not a real design.
+The current build already supports this end to end. Two things worth knowing: `role = 'admin'` is the only role that unlocks user management, so at least one person per cycle must hold it; and creating ~30 accounts one at a time is workable but tedious — see §5 for the bulk-handout idea if that becomes a real pain point.
 
-Deferred (not started):
-- Any public-facing page beyond that one proof-of-wiring homepage — waiting on the reference frontend the user will hand over.
-- Media upload wiring for image fields (content types currently take a plain image URL string — fine for pasting existing URLs, no upload widget yet). Per SRS.md FR-10 the destination is a **Cloudflare bucket**, referenced from Postgres by URL — not Supabase Storage (an earlier FR-10 version said Supabase Storage; SRS.md changed mid-session on 2026-09-02, after the schema was already written). The plain-URL-field schema design is storage-agnostic, so no rework is needed either way — only the actual bucket setup and an upload server action are outstanding. See `CLAUDE.md`'s "Known gaps" for the current detail.
-- `packages/supabase/src/database.types.ts` is hand-authored to mirror the migration; once the Supabase CLI is linked to the project, regenerate it with `supabase gen types typescript` instead of hand-editing both files in sync.
-- Per-type admin polish (select dropdowns instead of free-text for things like `status`/`category`/`group_name`, an album-picker for `gallery_images.album_id` instead of pasting a UUID). The generic CRUD works today, just not maximally friendly.
+### Step 2 — Migration `0002` + types
+1. Write `0002_frontend_fields.sql` per §3, apply via MCP.
+2. Update `database.types.ts` to match.
+3. Extend `src/lib/content/home-sections.ts` with `home_section_items` reads (`getHomeSectionWithItems(key)`).
+4. **Verify:** `npm run type-check`.
 
-## Loose end, flagged separately from this build
+### Step 3 — Admin UX so the growing schema stays manageable
+This is the "smooth CMS experience" requirement, and it gets *worse* if deferred until after the schema grows.
+1. Add a `select` field kind to `src/lib/admin/content-types.ts` + `content-form.tsx` — real dropdowns for `status`, `events.category`, `navigation_items.group_name`, `agp_blocks.block_key` (currently free-text, easy to typo into a broken page).
+2. Add a `reference` field kind — renders a `<select>` populated from another table. Fixes `gallery_images.album_id` and the new `home_section_items.section_id` (both currently require pasting a raw UUID).
+3. Register `home_section_items` + all new §3 fields.
+4. **Verify:** create a stat item from `/admin` picking its parent section from a dropdown — no UUID typing anywhere.
 
-`apps/public-site/.env.local.example` has real-looking Supabase keys already committed to git — worth rotating the secret key and replacing the file with placeholders.
+### Step 4 — Seed baseline content
+So the site renders immediately and editors *edit* rather than *invent*. Seeded via SQL (idempotent, `on conflict do nothing`):
+- `site_settings` — name, tagline, socials, footer note, background image.
+- `navigation_items` — 5 primary (Home/Event/Projects/Blog/Forum) + 5 footer.
+- `home_sections` — `hero`, `about`, `achievements`, `blog` with the reference design's real copy.
+- `home_section_items` — About's 3 stats, Achievements' 2 metrics.
+- **Verify:** every row visible and editable in `/admin`.
+
+### Step 5 — Route restructure: isolate public from admin
+Root layout only renders `<html>`/`<body>`, so the dark theme **cannot** live on `<body>` without breaking the light admin.
+1. Move `src/app/page.tsx` → `src/app/(public)/page.tsx`.
+2. New `src/app/(public)/layout.tsx` — dark wrapper `<div>` (bg, text color, page background image from `site_settings`), Space Grotesk, header + footer.
+3. Root layout: load both fonts as CSS variables, drop theme classes from `<body>`.
+4. **Verify:** `/admin` still renders light and unbroken; `/` renders dark.
+
+### Step 6 — Port the design system (Tailwind v3 → v4)
+Low risk: the reference uses arbitrary hex values (`bg-[#0d111a]`) almost everywhere, so its `tailwind.config.ts` colors are barely referenced — nothing to translate there.
+1. Port `:root` custom properties, `container-shell`, `reveal`, `grid-pattern` into our `globals.css` (v4 syntax), leaving the shadcn token block untouched.
+2. Add the reference's palette as `@theme` tokens for anything that *does* use named colors.
+3. **Verify:** admin screens visually unchanged.
+
+### Step 7 — Port components 1:1 (still hardcoded)
+Copy into `src/components/public/`: `SiteHeader`, `HeroSection`, `HeroBackground`, `PageEffects`, `SectionHeading`, `AboutSection`, `EventsSection`, `ProjectsSection`, `ProjectCard`, `AchievementsSection`, `BlogSection`, `SiteFooter` — **keeping their hardcoded data initially**, so any visual difference is provably a port bug, not a data bug.
+- Keep CSS `background-image` (not `next/image`) — the design uses backgrounds nearly everywhere, so no `remotePatterns` config is needed and fidelity is exact.
+- `"use client"` stays on `HeroBackground`, `PageEffects`, `SiteHeader`.
+- **Verify:** run both apps side by side, compare at 375 / 768 / 1280 px.
+
+### Step 8 — Wire sections to the CMS
+Replace each hardcoded array with a server-side call to `src/lib/content/*`. Sections stay server components; only the effects stay client.
+- Hero/About/Achievements/Blog headings ← `home_sections` (+ `home_section_items`)
+- Featured event ← next upcoming `events` row
+- Projects ← `getFlagshipProjects(3)`
+- Achievements milestone ← top `achievements` row
+- Blog cards ← `getPublishedBlogPosts(3)`
+- Header/footer ← `getVisibleNavigation()` + `getSiteSettings()`
+- **Every section needs an empty-state fallback** — the DB starts empty and sections must degrade gracefully (hide, or show placeholder) rather than crash.
+- **Verify:** edit a row in `/admin` → refresh `/` → change appears. That round-trip is the whole point of the architecture.
+
+### Step 9 — Finish what the reference left unfinished
+1. Real mobile drawer replacing `alert("Mobile navigation coming soon.")`, fed by the same `navigation_items` data.
+2. Metadata from `seo_metadata` + `site_settings` (`generateMetadata`).
+3. `"View project"` / `"Read article"` links: inert for now, wired when detail routes land (§5).
+
+### Step 10 — Verify and ship
+`npm run type-check`, `npm run lint`, `npm run build`; dev-server pass at 3 breakpoints; CMS round-trip on at least 3 content types; then small commits + push.
+
+---
+
+## 5. Explicitly deferred
+
+The reference repo is **homepage-only**. The remaining frontend-overview.md pages come after this lands, in roughly this order: Projects + `/projects/[slug]`, Events + detail, Blog + detail, Committee, Achievements, Gallery + album, Alumni, Contact (with the `contact_submissions` form), AGP, Forum.
+
+Also deferred:
+- `next/image` optimization (needs `remotePatterns` for the R2 domain; the design uses CSS backgrounds so this buys little today).
+- Regenerating `database.types.ts` via `supabase gen types` now that CLI-level access exists, instead of hand-authoring it.
+- **Bulk account handover** — if creating a full committee's accounts one at a time proves painful, add either CSV/bulk creation or a one-time printable credentials sheet to `/admin/users`. Not needed for the 3 dev accounts; worth revisiting before the first real committee onboarding.
+
+---
+
+## 6. Decisions taken (2026-09-04)
+
+- **The 3 accounts are development accounts, not role assignments.** All get `admin`; committee designations are irrelevant at this stage. Everything gets set up fresh once the platform is ready.
+- **Full names confirmed:** Md Yak Safu, Mollah Omor Hamza, Ishat Noor Mahi.
+- **Seeding the reference design's placeholder copy is approved** for Step 4 — the site should render fully populated so editors have something to edit. Real copy replaces it through the CMS before launch; nothing about that requires a code change.
+- **Theme:** dark, per the reference frontend. frontend-overview.md's "light-first" section is superseded and should be ignored; that document governs pages/content only.
+- **No open blockers.** Step 1 can start on approval.

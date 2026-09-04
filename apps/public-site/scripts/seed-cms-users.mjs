@@ -1,5 +1,7 @@
-// One-off seed script for the 3 initial CMS users (admin/president/RND wing
-// head, per the plan). Edit the USERS array below with real names, then run:
+// One-off seed script for the 3 development CMS accounts (see
+// IMPLEMENTATION_PLAN.md "Account lifecycle" — these are throwaway dev
+// accounts, not real committee role assignments; real accounts get created
+// fresh via /admin/users once the platform is ready). Run:
 //
 //   node --env-file=.env.local scripts/seed-cms-users.mjs
 //
@@ -12,10 +14,12 @@
 // ever sent to this address, Supabase Auth just requires an email shape.
 const SYNTHETIC_EMAIL_DOMAIN = "cms.internal.robosust";
 
+// All three get 'admin' deliberately during development — the point is each
+// person can exercise the whole CMS, including user management.
 const USERS = [
-  { username: "admin", fullName: "CHANGE ME — System Admin", role: "admin" },
-  { username: "president", fullName: "CHANGE ME — President", role: "president" },
-  { username: "rnd_wing_head", fullName: "CHANGE ME — R&D Wing Head", role: "rnd_wing_head" },
+  { username: "yakSafu122", fullName: "Md Yak Safu", role: "admin" },
+  { username: "MollahHamza22444", fullName: "Mollah Omor Hamza", role: "admin" },
+  { username: "inMahi787", fullName: "Ishat Noor Mahi", role: "admin" },
 ];
 
 function generateTempPassword() {

@@ -25,7 +25,7 @@ export async function createCmsUser(input: {
   await requireAdmin();
 
   const username = input.username.trim().toLowerCase();
-  if (!/^[a-z0-9_.-]{3,32}$/.test(username)) {
+  if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
     return { error: "Username must be 3-32 characters: letters, numbers, dot, dash, underscore." };
   }
 

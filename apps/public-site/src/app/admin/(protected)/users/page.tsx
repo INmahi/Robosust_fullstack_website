@@ -79,7 +79,7 @@ export default async function UsersPage({
           <input
             name="username"
             required
-            pattern="[a-z0-9_.-]{3,32}"
+            pattern="[a-z0-9._-]{3,32}"
             title="3-32 chars: lowercase letters, numbers, dot, dash, underscore"
             className="rounded border border-zinc-300 px-3 py-2 font-normal"
           />

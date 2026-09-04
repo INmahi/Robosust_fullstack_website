@@ -11,12 +11,33 @@ create extension if not exists pgcrypto;
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
   return new;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- cms_users — who can access /admin. Extensible: add a row, don't add a role.
+-- Each row maps 1:1 to a Supabase Auth user whose email is a synthetic,
+-- non-deliverable address (see src/lib/auth) so login/reset never sends mail.
+--
+-- Created before is_cms_user()/is_cms_admin() below: `language sql` function
+-- bodies are validated against the catalog at CREATE time (unlike plpgsql,
+-- which only checks syntax), so the table they query has to exist first.
+-- ---------------------------------------------------------------------------
+
+create table public.cms_users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  username text not null unique,
+  email text not null unique,
+  full_name text not null,
+  role text not null default 'editor',
+  must_change_password boolean not null default true,
+  created_at timestamptz not null default now()
+);
 
 -- SECURITY DEFINER so RLS policies can check cms_users membership without
 -- recursively re-evaluating cms_users' own RLS policies.
@@ -42,22 +63,6 @@ $$;
 
 grant execute on function public.is_cms_user() to anon, authenticated;
 grant execute on function public.is_cms_admin() to anon, authenticated;
-
--- ---------------------------------------------------------------------------
--- cms_users — who can access /admin. Extensible: add a row, don't add a role.
--- Each row maps 1:1 to a Supabase Auth user whose email is a synthetic,
--- non-deliverable address (see src/lib/auth) so login/reset never sends mail.
--- ---------------------------------------------------------------------------
-
-create table public.cms_users (
-  id uuid primary key references auth.users(id) on delete cascade,
-  username text not null unique,
-  email text not null unique,
-  full_name text not null,
-  role text not null default 'editor',
-  must_change_password boolean not null default true,
-  created_at timestamptz not null default now()
-);
 
 alter table public.cms_users enable row level security;
 
@@ -111,6 +116,7 @@ create table public.navigation_items (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+create index navigation_items_parent_id_idx on public.navigation_items (parent_id);
 
 create table public.home_sections (
   id uuid primary key default gen_random_uuid(),
@@ -401,12 +407,12 @@ end;
 $$;
 
 -- notices: public sees only pinned/non-expired; cms_users see everything.
-create policy "notices_public_select" on public.notices
+-- One combined SELECT policy, not two overlapping ones — Postgres evaluates
+-- every permissive policy that applies to a role, so two policies covering
+-- the same role/action is pure overhead (flagged by the performance advisor).
+create policy "notices_select" on public.notices
   for select
-  using (expires_at is null or expires_at > now());
-create policy "notices_cms_select_all" on public.notices
-  for select to authenticated
-  using (public.is_cms_user());
+  using (public.is_cms_user() or expires_at is null or expires_at > now());
 create policy "notices_cms_write_insert" on public.notices
   for insert to authenticated with check (public.is_cms_user());
 create policy "notices_cms_write_update" on public.notices
@@ -415,12 +421,9 @@ create policy "notices_cms_write_delete" on public.notices
   for delete to authenticated using (public.is_cms_user());
 
 -- blog_posts: public sees only published; cms_users see everything (drafts too).
-create policy "blog_posts_public_select" on public.blog_posts
+create policy "blog_posts_select" on public.blog_posts
   for select
-  using (published = true);
-create policy "blog_posts_cms_select_all" on public.blog_posts
-  for select to authenticated
-  using (public.is_cms_user());
+  using (public.is_cms_user() or published = true);
 create policy "blog_posts_cms_write_insert" on public.blog_posts
   for insert to authenticated with check (public.is_cms_user());
 create policy "blog_posts_cms_write_update" on public.blog_posts
