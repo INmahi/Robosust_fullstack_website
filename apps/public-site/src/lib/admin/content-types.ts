@@ -13,13 +13,20 @@ export type FieldKind =
   | "datetime-local"
   | "image-url"
   | "string-array"
-  | "json";
+  | "json"
+  | "select"
+  | "reference";
 
 export type FieldConfig = {
   key: string;
   label: string;
   kind: FieldKind;
   required?: boolean;
+  /** kind: "select" — fixed choices, rendered as a real <select>. */
+  options?: string[];
+  /** kind: "reference" — a foreign key, rendered as a <select> populated
+   * from another table's rows instead of a pasted-in UUID. */
+  reference?: { table: string; labelField: string };
 };
 
 export type ContentTypeConfig = {
@@ -33,21 +40,19 @@ export type ContentTypeConfig = {
   allowDelete: boolean;
 };
 
-const timestampless = <T extends FieldConfig[]>(fields: T) => fields;
-
 export const contentTypes: ContentTypeConfig[] = [
   {
     slug: "notices",
     table: "notices",
     label: "Notices",
-    fields: timestampless([
+    fields: [
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "body", label: "Body", kind: "textarea" },
       { key: "link", label: "Link", kind: "text" },
       { key: "pinned", label: "Pinned", kind: "boolean" },
       { key: "expires_at", label: "Expires at", kind: "datetime-local" },
       { key: "sort_order", label: "Sort order", kind: "number" },
-    ]),
+    ],
     listColumns: ["title", "pinned", "expires_at"],
     sortColumn: "sort_order",
     allowCreate: true,
@@ -60,7 +65,7 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "image_url", label: "Image URL", kind: "image-url" },
+      { key: "image_url", label: "Image", kind: "image-url" },
       { key: "competition", label: "Competition", kind: "text" },
       { key: "year", label: "Year", kind: "number" },
       { key: "position", label: "Position/result", kind: "text" },
@@ -81,9 +86,16 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Short description", kind: "textarea" },
       { key: "body", label: "Full body", kind: "textarea" },
-      { key: "images", label: "Image URLs", kind: "string-array" },
-      { key: "status", label: "Status (ongoing/completed/upcoming)", kind: "text", required: true },
-      { key: "flagship", label: "Flagship", kind: "boolean" },
+      { key: "cover_image_url", label: "Cover image", kind: "image-url" },
+      { key: "images", label: "Gallery image URLs", kind: "string-array" },
+      {
+        key: "status",
+        label: "Status",
+        kind: "select",
+        required: true,
+        options: ["ongoing", "completed", "upcoming"],
+      },
+      { key: "flagship", label: "Flagship (shown on homepage)", kind: "boolean" },
       { key: "category", label: "Category", kind: "text" },
       { key: "github_url", label: "GitHub URL", kind: "text" },
       { key: "demo_url", label: "Demo URL", kind: "text" },
@@ -102,8 +114,13 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "slug", label: "Slug", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "image_url", label: "Image URL", kind: "image-url" },
-      { key: "category", label: "Category (workshop/seminar/competition/meeting)", kind: "text" },
+      { key: "image_url", label: "Image", kind: "image-url" },
+      {
+        key: "category",
+        label: "Category",
+        kind: "select",
+        options: ["workshop", "seminar", "competition", "meeting"],
+      },
       { key: "event_date", label: "Date", kind: "datetime-local" },
       { key: "location", label: "Location", kind: "text" },
       { key: "registration_url", label: "Registration URL", kind: "text" },
@@ -121,9 +138,10 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "slug", label: "Slug", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text", required: true },
+      { key: "category", label: "Category (e.g. Build log, Engineering, Lab notes)", kind: "text" },
       { key: "excerpt", label: "Excerpt", kind: "textarea" },
       { key: "content", label: "Content", kind: "textarea" },
-      { key: "image_url", label: "Image URL", kind: "image-url" },
+      { key: "image_url", label: "Image", kind: "image-url" },
       { key: "author", label: "Author", kind: "text" },
       { key: "published", label: "Published", kind: "boolean" },
     ],
@@ -140,7 +158,7 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "designation", label: "Designation", kind: "text", required: true },
       { key: "department_session", label: "Department + session (e.g. EEE'21)", kind: "text" },
       { key: "tier_group", label: "Tier group (e.g. Core EC, R&D)", kind: "text" },
-      { key: "photo_url", label: "Photo URL", kind: "image-url" },
+      { key: "photo_url", label: "Photo", kind: "image-url" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
     listColumns: ["name", "designation", "tier_group"],
@@ -156,7 +174,7 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "name", label: "Name", kind: "text", required: true },
       { key: "department", label: "Department", kind: "text" },
       { key: "batch", label: "Batch", kind: "text" },
-      { key: "photo_url", label: "Photo URL", kind: "image-url" },
+      { key: "photo_url", label: "Photo", kind: "image-url" },
       { key: "current_position", label: "Current position", kind: "text" },
       { key: "linkedin_url", label: "LinkedIn URL", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
@@ -173,7 +191,7 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "slug", label: "Slug", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text", required: true },
-      { key: "cover_image_url", label: "Cover image URL", kind: "image-url" },
+      { key: "cover_image_url", label: "Cover image", kind: "image-url" },
       { key: "album_date", label: "Date", kind: "date" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
@@ -187,8 +205,14 @@ export const contentTypes: ContentTypeConfig[] = [
     table: "gallery_images",
     label: "Gallery Images",
     fields: [
-      { key: "album_id", label: "Album ID", kind: "text", required: true },
-      { key: "image_url", label: "Image URL", kind: "image-url", required: true },
+      {
+        key: "album_id",
+        label: "Album",
+        kind: "reference",
+        required: true,
+        reference: { table: "gallery_albums", labelField: "title" },
+      },
+      { key: "image_url", label: "Image", kind: "image-url", required: true },
       { key: "caption", label: "Caption", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
@@ -202,7 +226,13 @@ export const contentTypes: ContentTypeConfig[] = [
     table: "agp_blocks",
     label: "AGP Page Blocks",
     fields: [
-      { key: "block_key", label: "Block key", kind: "text", required: true },
+      {
+        key: "block_key",
+        label: "Block key",
+        kind: "select",
+        required: true,
+        options: ["hero", "overview", "rules", "schedule", "past_editions", "photo_strip", "registration_cta"],
+      },
       { key: "content", label: "Content (JSON)", kind: "json" },
       { key: "visible", label: "Visible", kind: "boolean" },
       { key: "sort_order", label: "Sort order", kind: "number" },
@@ -219,7 +249,13 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "label", label: "Label", kind: "text", required: true },
       { key: "url", label: "URL", kind: "text", required: true },
-      { key: "group_name", label: "Group (primary/more/footer)", kind: "text", required: true },
+      {
+        key: "group_name",
+        label: "Group",
+        kind: "select",
+        required: true,
+        options: ["primary", "more", "footer"],
+      },
       { key: "visible", label: "Visible", kind: "boolean" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
@@ -234,16 +270,44 @@ export const contentTypes: ContentTypeConfig[] = [
     label: "Home Sections",
     fields: [
       { key: "section_key", label: "Section key", kind: "text", required: true },
+      { key: "eyebrow", label: "Eyebrow (small label above heading)", kind: "text" },
       { key: "heading", label: "Heading", kind: "text" },
       { key: "subheading", label: "Subheading", kind: "textarea" },
-      { key: "background_image_url", label: "Background image URL", kind: "image-url" },
+      { key: "body", label: "Body copy", kind: "textarea" },
+      { key: "background_image_url", label: "Background image", kind: "image-url" },
+      { key: "secondary_image_url", label: "Secondary image", kind: "image-url" },
       { key: "stat_text", label: "Stat text", kind: "text" },
-      { key: "cta_text", label: "CTA text", kind: "text" },
-      { key: "cta_url", label: "CTA URL", kind: "text" },
+      { key: "cta_text", label: "Primary CTA text", kind: "text" },
+      { key: "cta_url", label: "Primary CTA URL", kind: "text" },
+      { key: "secondary_cta_text", label: "Secondary CTA text", kind: "text" },
+      { key: "secondary_cta_url", label: "Secondary CTA URL", kind: "text" },
       { key: "visible", label: "Visible", kind: "boolean" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
     listColumns: ["section_key", "heading", "visible"],
+    sortColumn: "sort_order",
+    allowCreate: true,
+    allowDelete: true,
+  },
+  {
+    slug: "home-section-items",
+    table: "home_section_items",
+    label: "Home Section Cards",
+    fields: [
+      {
+        key: "section_id",
+        label: "Section",
+        kind: "reference",
+        required: true,
+        reference: { table: "home_sections", labelField: "section_key" },
+      },
+      { key: "value", label: "Value (e.g. 01, 12+)", kind: "text" },
+      { key: "label", label: "Label (e.g. Think, Build)", kind: "text" },
+      { key: "body", label: "Body text", kind: "textarea" },
+      { key: "image_url", label: "Image", kind: "image-url" },
+      { key: "sort_order", label: "Sort order", kind: "number" },
+    ],
+    listColumns: ["section_id", "value", "label"],
     sortColumn: "sort_order",
     allowCreate: true,
     allowDelete: true,
@@ -256,7 +320,7 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "page_key", label: "Page key", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text" },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "share_image_url", label: "Share image URL", kind: "image-url" },
+      { key: "share_image_url", label: "Share image", kind: "image-url" },
     ],
     listColumns: ["page_key", "title"],
     allowCreate: true,

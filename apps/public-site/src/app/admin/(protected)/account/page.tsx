@@ -1,4 +1,14 @@
 import { requireCmsUser } from "@/lib/auth/guard";
+import {
+  alertErrorClass,
+  alertSuccessClass,
+  buttonPrimaryClass,
+  cardClass,
+  inputClass,
+  labelClass,
+  pageHeadingClass,
+  pageSubtextClass,
+} from "@/lib/admin/ui-classes";
 import { changePasswordAction } from "./actions";
 
 export default async function AccountPage({
@@ -10,57 +20,33 @@ export default async function AccountPage({
   const { error, success } = await searchParams;
 
   return (
-    <div className="max-w-sm">
-      <h1 className="mb-1 text-lg font-semibold">Account</h1>
-      <p className="mb-6 text-sm text-zinc-500">
-        Signed in as <strong>{user.username}</strong> ({user.full_name})
+    <div className="max-w-md">
+      <h1 className={pageHeadingClass}>Account</h1>
+      <p className={`${pageSubtextClass} mb-6`}>
+        Signed in as <strong className="font-medium text-slate-700">{user.username}</strong> ({user.full_name})
       </p>
 
       {error && (
-        <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className={`${alertErrorClass} mb-4`}>
           {error}
         </p>
       )}
-      {success && (
-        <p className="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-          Password updated.
-        </p>
-      )}
+      {success && <p className={`${alertSuccessClass} mb-4`}>Password updated.</p>}
 
-      <form action={changePasswordAction} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm font-medium">
+      <form action={changePasswordAction} className={`${cardClass} flex flex-col gap-4`}>
+        <label className={labelClass}>
           Current password
-          <input
-            name="currentPassword"
-            type="password"
-            required
-            className="rounded border border-zinc-300 px-3 py-2 font-normal"
-          />
+          <input name="currentPassword" type="password" required className={inputClass} />
         </label>
-        <label className="flex flex-col gap-1 text-sm font-medium">
+        <label className={labelClass}>
           New password
-          <input
-            name="newPassword"
-            type="password"
-            required
-            minLength={8}
-            className="rounded border border-zinc-300 px-3 py-2 font-normal"
-          />
+          <input name="newPassword" type="password" required minLength={8} className={inputClass} />
         </label>
-        <label className="flex flex-col gap-1 text-sm font-medium">
+        <label className={labelClass}>
           Confirm new password
-          <input
-            name="confirmPassword"
-            type="password"
-            required
-            minLength={8}
-            className="rounded border border-zinc-300 px-3 py-2 font-normal"
-          />
+          <input name="confirmPassword" type="password" required minLength={8} className={inputClass} />
         </label>
-        <button
-          type="submit"
-          className="rounded bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-        >
+        <button type="submit" className={`${buttonPrimaryClass} mt-2 self-start`}>
           Update password
         </button>
       </form>

@@ -1,3 +1,5 @@
+import { LayoutDashboard } from "lucide-react";
+import { alertErrorClass, buttonPrimaryClass, inputClass, labelClass } from "@/lib/admin/ui-classes";
 import { loginAction } from "./actions";
 
 export default async function LoginPage({
@@ -8,46 +10,44 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-4">
-      <div>
-        <h1 className="text-xl font-semibold">RoboSUST CMS</h1>
-        <p className="text-sm text-zinc-500">Sign in with your CMS username.</p>
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <LayoutDashboard size={20} />
+          </span>
+          <div>
+            <h1 className="text-lg font-semibold text-slate-900">RoboSUST CMS</h1>
+            <p className="mt-1 text-sm text-slate-500">Sign in with your CMS username.</p>
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className={`${alertErrorClass} mb-4`}>
+            {error}
+          </p>
+        )}
+
+        <form action={loginAction} className="flex flex-col gap-4">
+          <label className={labelClass}>
+            Username
+            <input name="username" required autoFocus autoComplete="username" className={inputClass} />
+          </label>
+          <label className={labelClass}>
+            Password
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className={inputClass}
+            />
+          </label>
+          <button type="submit" className={`${buttonPrimaryClass} mt-2 w-full`}>
+            Sign in
+          </button>
+        </form>
       </div>
-
-      {error && (
-        <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
-
-      <form action={loginAction} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Username
-          <input
-            name="username"
-            required
-            autoFocus
-            autoComplete="username"
-            className="rounded border border-zinc-300 px-3 py-2 font-normal"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="rounded border border-zinc-300 px-3 py-2 font-normal"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-        >
-          Sign in
-        </button>
-      </form>
     </main>
   );
 }

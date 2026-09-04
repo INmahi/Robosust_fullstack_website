@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getContentTypeConfig } from "@/lib/admin/content-types";
+import { buttonPrimaryClass, cardClass, pageHeadingClass } from "@/lib/admin/ui-classes";
 import { createRowAction } from "../actions";
 import { ContentFormFields } from "../content-form";
 
@@ -15,14 +18,18 @@ export default async function NewContentRowPage({
   const boundCreate = createRowAction.bind(null, type);
 
   return (
-    <div className="max-w-lg">
-      <h1 className="mb-6 text-lg font-semibold">New {config.label.replace(/s$/, "")}</h1>
-      <form action={boundCreate} className="flex flex-col gap-3">
+    <div className="max-w-xl">
+      <Link
+        href={`/admin/${type}`}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-800"
+      >
+        <ArrowLeft size={14} />
+        {config.label}
+      </Link>
+      <h1 className={`${pageHeadingClass} mb-6`}>New {config.label.replace(/s$/, "")}</h1>
+      <form action={boundCreate} className={`${cardClass} flex flex-col gap-4`}>
         <ContentFormFields fields={config.fields} />
-        <button
-          type="submit"
-          className="mt-2 rounded bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-        >
+        <button type="submit" className={`${buttonPrimaryClass} mt-2 self-start`}>
           Create
         </button>
       </form>

@@ -15,8 +15,12 @@ export function parseFormValues(fields: FieldConfig[], formData: FormData): Gene
         break;
       }
       case "number": {
+        // An empty optional number field is omitted, not sent as null: several
+        // number columns (sort_order, on every table) are NOT NULL with a
+        // DEFAULT — an explicit null in the payload overrides that default
+        // and the insert/update fails the not-null constraint outright.
         const text = typeof raw === "string" ? raw.trim() : "";
-        row[field.key] = text === "" ? null : Number(text);
+        if (text !== "") row[field.key] = Number(text);
         break;
       }
       case "string-array": {
