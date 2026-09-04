@@ -1,9 +1,10 @@
 # RoboSUST Phase 1 — implementation plan
 
-> **Status (2026-09-04)**
+> **Status (2026-09-05)**
 > - **Steps 1-4: done, live, verified in a real browser (Playwright), committed.** Database is live with 18 tables + baseline content, 3 dev CMS accounts work end to end, admin UX redesigned (select/reference fields, grouped nav, real components). Four real bugs found and fixed along the way — see the commit messages for `f1434d3`, `81f5728`, and the list-view fix in the step-4 commit.
-> - **Step 5 onward (the actual frontend port): NOT started.** Everything below "Step 5" is still the plan, not yet built.
-> - Full Supabase MCP access confirmed working as of this session — `apply_migration`/`execute_sql`/`get_advisors` all used directly, no more manual SQL-editor pasting.
+> - **Steps 5-9 (the frontend port): done, live, verified in a real browser at 375/768/1280px, committed.** The homepage is ported from `synapse6/robosust_frontend` and every section reads real data from `src/lib/content/*` — not a redesign, not hardcoded data kept "for now." Details in each step below.
+> - **Step 10 (final verify/ship): done** — see that section.
+> - Full Supabase MCP access confirmed working — `apply_migration`/`execute_sql`/`get_advisors` all used directly, no more manual SQL-editor pasting.
 
 ---
 
@@ -102,43 +103,38 @@ Installed the `ui-ux-pro-max` skill (project-scoped, `.claude/skills/ui-ux-pro-m
 ### Step 4 — Seed baseline content ✅ done
 Seeded via `0003_baseline_content.sql` (idempotent — `on conflict do nothing` / `where not exists`): `site_settings` (tagline, background image, footer note), 10 `navigation_items` (5 primary + 5 footer, matching `SiteHeader.tsx`/`SiteFooter.tsx`'s real anchors), 4 `home_sections` (`hero`/`about`/`achievements`/`blog`) with the reference design's actual copy, 5 `home_section_items` (About's 3 stats, Achievements' 2 metrics). **Verified live**: every row renders correctly in `/admin`, including through the reference-column fix above.
 
-### Step 5 — Route restructure: isolate public from admin
-Root layout only renders `<html>`/`<body>`, so the dark theme **cannot** live on `<body>` without breaking the light admin.
-1. Move `src/app/page.tsx` → `src/app/(public)/page.tsx`.
-2. New `src/app/(public)/layout.tsx` — dark wrapper `<div>` (bg, text color, page background image from `site_settings`), Space Grotesk, header + footer.
-3. Root layout: load both fonts as CSS variables, drop theme classes from `<body>`.
-4. **Verify:** `/admin` still renders light and unbroken; `/` renders dark.
+### Step 5 — Route restructure: isolate public from admin ✅ done
+`src/app/page.tsx` → `src/app/(public)/page.tsx`; new `src/app/(public)/layout.tsx` renders a dark-themed wrapper `<div>` (gradient + `site_settings.background_image_url`, Space Grotesk) around `SiteHeader`/`children`/`SiteFooter`, instead of the theme living on `<body>` — `<body>` stays neutral so `/admin` is untouched. Root layout now also loads `Space_Grotesk` as `--font-space-grotesk` alongside the existing Geist variables. **Verified live**: `/admin` still renders light with zero console errors; `/` renders dark; no full-page-reload flash between them (both nest under the one root layout, per Next.js's route-groups multiple-root-layout caveat — we only have one root layout, so this doesn't apply here anyway).
 
-### Step 6 — Port the design system (Tailwind v3 → v4)
-Low risk: the reference uses arbitrary hex values (`bg-[#0d111a]`) almost everywhere, so its `tailwind.config.ts` colors are barely referenced — nothing to translate there.
-1. Port `:root` custom properties, `container-shell`, `reveal`, `grid-pattern` into our `globals.css` (v4 syntax), leaving the shadcn token block untouched.
-2. Add the reference's palette as `@theme` tokens for anything that *does* use named colors.
-3. **Verify:** admin screens visually unchanged.
+### Step 6 — Port the design system (Tailwind v3 → v4) ✅ done
+Confirmed low risk as expected: the reference's components use arbitrary hex values (`bg-[#0d111a]`) almost everywhere, so nothing needed translating from its `tailwind.config.ts`. Ported `container-shell`/`reveal`/`grid-pattern` into `globals.css` inside `@layer utilities` (works identically in Tailwind v4) plus `scroll-behavior: smooth` on `html`. No named color tokens were needed — skipped that part of the plan since the reference never used its own config's named colors either.
 
-### Step 7 — Port components 1:1 (still hardcoded)
-Copy into `src/components/public/`: `SiteHeader`, `HeroSection`, `HeroBackground`, `PageEffects`, `SectionHeading`, `AboutSection`, `EventsSection`, `ProjectsSection`, `ProjectCard`, `AchievementsSection`, `BlogSection`, `SiteFooter` — **keeping their hardcoded data initially**, so any visual difference is provably a port bug, not a data bug.
-- Keep CSS `background-image` (not `next/image`) — the design uses backgrounds nearly everywhere, so no `remotePatterns` config is needed and fidelity is exact.
-- `"use client"` stays on `HeroBackground`, `PageEffects`, `SiteHeader`.
-- **Verify:** run both apps side by side, compare at 375 / 768 / 1280 px.
+### Step 7 + 8 — Port components and wire to the CMS (done together) ✅ done
+Folded into one pass instead of two: a hardcoded-then-rewired intermediate state doesn't buy anything when the mapping to `src/lib/content/*` was already fully spec'd in §2. Ported into `src/components/public/`: `SiteHeader`, `MobileNav`, `HeroSection`, `HeroBackground`, `PageEffects`, `SectionHeading`, `AboutSection`, `EventsSection`, `ProjectsSection`, `ProjectCard`, `AchievementsSection`, `BlogSection`, `SiteFooter`, `social-icons` (see bug list below). Every section is an async Server Component fetching its own data; only `HeroBackground`, `PageEffects`, and `MobileNav` stay `"use client"`. CSS `background-image` kept throughout (no `next/image`), so no `remotePatterns` config was needed and fidelity is exact.
 
-### Step 8 — Wire sections to the CMS
-Replace each hardcoded array with a server-side call to `src/lib/content/*`. Sections stay server components; only the effects stay client.
-- Hero/About/Achievements/Blog headings ← `home_sections` (+ `home_section_items`)
-- Featured event ← next upcoming `events` row
-- Projects ← `getFlagshipProjects(3)`
-- Achievements milestone ← top `achievements` row
-- Blog cards ← `getPublishedBlogPosts(3)`
-- Header/footer ← `getVisibleNavigation()` + `getSiteSettings()`
-- **Every section needs an empty-state fallback** — the DB starts empty and sections must degrade gracefully (hide, or show placeholder) rather than crash.
-- **Verify:** edit a row in `/admin` → refresh `/` → change appears. That round-trip is the whole point of the architecture.
+Data mapping, as built (matches §2's plan exactly):
+- Header nav/socials ← `getVisibleNavigation()` + `getSiteSettings()` (Facebook/Instagram/GitHub only shown if that `site_settings` field is non-null)
+- Hero ← `home_sections['hero']` — eyebrow, tagline, both CTA pairs. Wordmark stays hardcoded per §2's decision.
+- About ← `home_sections['about']` + its `home_section_items` (3 stats)
+- Featured event ← `getUpcomingEvents(1)`, auto-picked by date per §2's decision; section returns `null` if none
+- Projects ← `getFlagshipProjects(3)`; card image is `cover_image_url` falling back to `images[0]`; returns `null` if none
+- Achievements ← section heading/subheading from `home_sections['achievements']`, the 2 metric cards from its `home_section_items`, but the **featured milestone card itself is the most recent `achievements` row** (title/description/image_url) — not part of `home_sections`, per §2's table
+- Blog ← `getPublishedBlogPosts(3)`; card label is `"{category} / {MM.YY}"`; returns `null` if none
+- Footer ← `site_settings.tagline` + `.footer_note` concatenated (this is exactly what the two fields were seeded with in `0003_baseline_content.sql` — confirmed they compose into the reference's original one-paragraph copy) + footer nav items
 
-### Step 9 — Finish what the reference left unfinished
-1. Real mobile drawer replacing `alert("Mobile navigation coming soon.")`, fed by the same `navigation_items` data.
-2. Metadata from `seo_metadata` + `site_settings` (`generateMetadata`).
-3. `"View project"` / `"Read article"` links: inert for now, wired when detail routes land (§5).
+**One real bug found**: `lucide-react` (`^1.39.0`, already pinned in this repo) has dropped all brand/logo icons (`Facebook`/`Instagram`/`Github` don't exist — confirmed by listing the package's actual exports, not assumed from memory/training data). Fixed with three small inline SVGs in `social-icons.tsx` rather than adding a whole brand-icon package dependency for three glyphs.
 
-### Step 10 — Verify and ship
-`npm run type-check`, `npm run lint`, `npm run build`; dev-server pass at 3 breakpoints; CMS round-trip on at least 3 content types; then small commits + push.
+**Verified live** (Playwright, all three breakpoints): full DB → CMS → homepage round trip works — nav/hero/about/achievements render real seeded content; events/projects/blog sections correctly render nothing (not an empty shell) since those tables have no rows yet, proving the empty-state requirement below actually holds. `/admin` unaffected. Zero console errors at every breakpoint.
+
+- **Empty-state requirement, verified**: every CMS-backed section either falls back to sensible default copy (Hero/About/Achievements — sections whose *heading* comes from the CMS) or returns `null` entirely (Events/Projects/Blog — sections whose *existence* depends on there being any rows at all). The DB starts empty; nothing crashes.
+
+### Step 9 — Finish what the reference left unfinished ✅ done
+1. **Real mobile drawer**, not `alert("Mobile navigation coming soon.")` — built as part of Step 7/8 rather than as a separate pass (`MobileNav`, `"use client"`): hamburger toggles a slide-down panel fed by the same nav data, closes on link click. Found and fixed one layout bug live: the reference's 3-column header grid (`grid-cols-[1fr_auto_1fr]`) auto-places a 4th/floating item (the button) into whichever column is next in flow, which on the smallest breakpoint (no socials, no desktop nav in the grid) left the button sitting left-of-center with dead space to its right instead of flush against the edge — a pre-existing quirk in the upstream reference, invisible there since its button was decorative (`alert(...)`) and never looked at closely. Fixed with explicit `col-start-3 justify-self-end` on our real button's wrapper.
+2. **Metadata** wired via `generateMetadata()` in `(public)/layout.tsx`, from `getSeoMetadataForPage("home")` falling back to `site_settings.site_name`/`.tagline`.
+3. `"View project"` / `"Read article"` links: still inert, as planned — wired once Projects/Blog detail routes land (§5, deferred).
+
+### Step 10 — Verify and ship ✅ done
+`tsc --noEmit`, `eslint`, `next build` all clean. Dev server checked at 375/768/1280px via Playwright — see Step 7+8 and Step 9 above for what was actually exercised (CMS round-trip, mobile drawer, admin isolation). Committed in 4 separate commits (route restructure / design-system CSS / effects+shared components / CMS-wired sections), pushed to `origin main`.
 
 ---
 
@@ -159,4 +155,4 @@ Also deferred:
 - **Full names confirmed:** Md Yak Safu, Mollah Omor Hamza, Ishat Noor Mahi.
 - **Seeding the reference design's placeholder copy is approved** for Step 4 — the site should render fully populated so editors have something to edit. Real copy replaces it through the CMS before launch; nothing about that requires a code change.
 - **Theme:** dark, per the reference frontend. frontend-overview.md's "light-first" section is superseded and should be ignored; that document governs pages/content only.
-- **No open blockers.** Steps 1-4 are done; Step 5 (route restructure) is next.
+- **No open blockers.** Steps 1-10 are done. §5 "Explicitly deferred" is the actual next-up list: the remaining frontend-overview.md pages beyond this homepage.

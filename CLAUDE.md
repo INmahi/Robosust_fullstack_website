@@ -6,7 +6,7 @@ Monorepo for the RoboSUST website rebuild (Phase 1: CMS + public site; Phase 2, 
 
 - [SRS.md](SRS.md) — formal Software Requirements Spec: phases, data model, roles, Phase 2 EC Portal design.
 - [frontend-overview.md](frontend-overview.md) — agreed sitemap and content list ("what the site contains" — pages, sections, content types). **Not the source of truth for visual design/theme** — its "light-first" recommendation was superseded 2026-09-02 when the user provided an actual reference frontend (dark-themed); ignore this doc's palette/theme section, keep using it for sitemap and content-type completeness.
-- [synapse6/robosust_frontend](https://github.com/synapse6/robosust_frontend) (external repo) — the actual visual/design reference, dark-themed. As of 2026-09-02 it's homepage-only (hardcoded Hero/About/Events/Projects/Achievements/Blog sections), Next.js 14/React 18/Tailwind v3 — not yet ported into this monorepo or wired to `src/lib/content/*`.
+- [synapse6/robosust_frontend](https://github.com/synapse6/robosust_frontend) (external repo) — the visual/design reference, dark-themed, homepage-only, Next.js 14/React 18/Tailwind v3. **Ported into this monorepo and wired to `src/lib/content/*` as of 2026-09-05** — see `src/components/public/` below. Still useful as the source of truth for exact styling/markup if a section needs revisiting.
 - [plans.md](plans.md) — earlier discussion log; superseded on sequencing by SRS v2.0 (CMS ships before, not after, the EC Portal) but still useful for the schema-namespacing rationale (`cms_users` vs. future `members`).
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — **the living plan/status doc, read this first.** Phase 1a (backend/CMS) is done; it now carries the step-by-step plan for Phase 1b (porting the reference frontend and wiring it to the CMS), the design→CMS field mapping, the `0002` schema gaps, and open questions.
 
@@ -72,13 +72,22 @@ One module per Phase 1 content type, each exporting typed CRUD plus any public-f
 - `(protected)/settings/` — `site_settings` singleton edit form, grouped into Identity/Social/Contact/Footer cards (not part of the generic router).
 - `(protected)/[type]/` — the generic CRUD screen: `page.tsx` (list — `reference`-kind columns resolve to the real referenced row, not a raw UUID), `new/page.tsx`, `[id]/page.tsx` (edit), `actions.ts` (create/update/delete server actions, each re-checking auth), `content-form.tsx` (shared field renderer, async — `reference` fields fetch their options table).
 
-### Public pages
+### Public pages — `src/app/(public)` + `src/components/public`
 
-- `src/app/page.tsx` — homepage. **Deliberately a placeholder** — wired to `getActiveNotices()` + `getSiteSettings()` only to prove the content-layer contract works end to end, not a real design. The actual frontend port (from [synapse6/robosust_frontend](https://github.com/synapse6/robosust_frontend)) is IMPLEMENTATION_PLAN.md's Step 5 onward — not started yet.
+The dark-themed homepage, ported from [synapse6/robosust_frontend](https://github.com/synapse6/robosust_frontend) and wired to the CMS (IMPLEMENTATION_PLAN.md Steps 5-9, done 2026-09-05). Route group so the dark theme lives on a wrapper `<div>` in its own layout, not on `<body>` — `/admin` stays untouched and light.
+
+- `(public)/layout.tsx` — dark wrapper div (background image from `site_settings`, Space Grotesk), `generateMetadata()` from `seo_metadata`/`site_settings`, renders `SiteHeader`/`children`/`SiteFooter` inside `PageEffects`.
+- `(public)/page.tsx` — the homepage: `HeroSection`, `EventsSection`, `AboutSection`, `ProjectsSection`, `AchievementsSection`, `BlogSection` in order.
+- `src/components/public/page-effects.tsx` — client component: IntersectionObserver `.reveal` animations + scroll-spy active-nav-link highlighting. Ported near-verbatim.
+- `src/components/public/hero-background.tsx` — client component: pointer-reactive canvas grid behind the hero. Ported near-verbatim.
+- `src/components/public/mobile-nav.tsx` — client component: the reference's mobile menu was `alert("...")`; this is a real slide-down drawer fed by the same nav data.
+- `src/components/public/social-icons.tsx` — `lucide-react` (this repo's version, `^1.39.0`) has no Facebook/Instagram/GitHub icons (brand icons were dropped from the package) — three small inline SVGs instead of a whole brand-icon-package dependency.
+- `src/components/public/section-heading.tsx` — shared eyebrow/title/description layout every section below uses.
+- `src/components/public/site-header.tsx`, `site-footer.tsx`, `hero-section.tsx`, `about-section.tsx`, `events-section.tsx`, `projects-section.tsx`, `project-card.tsx`, `achievements-section.tsx`, `blog-section.tsx` — async Server Components, each fetching its own data through `src/lib/content/*` (see IMPLEMENTATION_PLAN.md §4 Step 7+8 for the exact field mapping). Sections backed by a specific row set (events/projects/blog) return `null` when empty rather than rendering a hollow shell; sections backed by a singleton (hero/about/achievements headings) fall back to the reference's original copy instead.
 
 ## Known gaps (see IMPLEMENTATION_PLAN.md §5 "Explicitly deferred" for the full list)
 
-`next/image` optimization not used (the design is CSS-background-heavy, so this buys little today); `database.types.ts` is still hand-authored (regenerate via `supabase gen types` now that CLI-level MCP access exists); bulk CMS-account creation (fine for 3 dev accounts, worth revisiting before the first real committee onboarding). The public frontend beyond the placeholder homepage doesn't exist yet — see IMPLEMENTATION_PLAN.md Steps 5-10.
+`next/image` optimization not used (the design is CSS-background-heavy, so this buys little today); `database.types.ts` is still hand-authored (regenerate via `supabase gen types` now that CLI-level MCP access exists); bulk CMS-account creation (fine for 3 dev accounts, worth revisiting before the first real committee onboarding). Beyond this homepage, the rest of frontend-overview.md's sitemap (Projects/Events/Blog detail pages, Committee, Gallery, Alumni, Contact, AGP, Forum) doesn't exist yet — see IMPLEMENTATION_PLAN.md §5 for the order.
 
 ## Security notes
 
