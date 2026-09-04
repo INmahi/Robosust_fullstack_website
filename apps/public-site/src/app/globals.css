@@ -128,6 +128,18 @@
     @apply font-sans;
     scroll-behavior: smooth;
   }
+
+  /* Scrolling stays fully functional (wheel/trackpad/keyboard/drag) — this
+     only hides the visible scrollbar track, site-wide. */
+  html,
+  body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* legacy Edge */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none; /* Chromium/Safari */
+  }
 }
 
 /* Public-site design system, ported from synapse6/robosust_frontend.

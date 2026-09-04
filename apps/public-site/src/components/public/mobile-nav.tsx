@@ -11,7 +11,7 @@ export function MobileNav({ navItems }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="col-start-3 justify-self-end md:hidden">
+    <div className="md:hidden">
       <button
         aria-label={open ? "Close menu" : "Menu"}
         aria-expanded={open}

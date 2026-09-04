@@ -19,7 +19,7 @@ export async function SiteFooter() {
       }}
     >
       <div className="container-shell">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div className="reveal flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="text-[30px] font-bold tracking-[-0.04em]">
               ROBO<span className="text-[#ff3b46]">SUST</span>
