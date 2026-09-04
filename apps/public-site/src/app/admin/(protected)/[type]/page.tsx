@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil, Trash2, Plus, Inbox } from "lucide-react";
-import { getContentTypeConfig } from "@/lib/admin/content-types";
+import { getContentTypeConfig, type FieldConfig } from "@/lib/admin/content-types";
 import { listRows } from "@/lib/admin/generic-store";
 import { buttonPrimaryClass, linkActionClass, linkDangerClass, pageHeadingClass } from "@/lib/admin/ui-classes";
 import { deleteRowAction } from "./actions";
@@ -17,7 +17,15 @@ export default async function ContentTypeListPage({
 
   const rows = await listRows(config.table, config.sortColumn);
   const boundDelete = deleteRowAction.bind(null, type);
-  const columnLabel = (col: string) => config.fields.find((f) => f.key === col)?.label ?? col;
+
+  // Table headers drop any "(e.g. ...)" hint the form label carries — useful
+  // next to an input, just noise as a column header.
+  const columnLabel = (col: string) => (config.fields.find((f) => f.key === col)?.label ?? col).split(" (")[0];
+
+  // reference-kind columns (e.g. gallery_images.album_id) show the real
+  // referenced row instead of a raw UUID — one lookup table per referenced
+  // table, not per row.
+  const referenceMaps = await buildReferenceMaps(config.fields, config.listColumns);
 
   return (
     <div>
@@ -49,7 +57,7 @@ export default async function ContentTypeListPage({
                 <tr key={String(row.id)} className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50">
                   {config.listColumns.map((col) => (
                     <td key={col} className="max-w-xs truncate px-4 py-3 text-slate-700">
-                      {formatCell(row[col])}
+                      {formatCell(row[col], referenceMaps.get(col))}
                     </td>
                   ))}
                   <td className="whitespace-nowrap px-4 py-3">
@@ -89,8 +97,27 @@ export default async function ContentTypeListPage({
   );
 }
 
-function formatCell(value: unknown): string {
+async function buildReferenceMaps(
+  fields: FieldConfig[],
+  listColumns: string[],
+): Promise<Map<string, Map<string, string>>> {
+  const maps = new Map<string, Map<string, string>>();
+
+  for (const col of listColumns) {
+    const field = fields.find((f) => f.key === col);
+    if (field?.kind !== "reference" || !field.reference) continue;
+
+    const options = await listRows(field.reference.table);
+    const labelField = field.reference.labelField;
+    maps.set(col, new Map(options.map((o) => [String(o.id), String(o[labelField] ?? o.id)])));
+  }
+
+  return maps;
+}
+
+function formatCell(value: unknown, referenceMap?: Map<string, string>): string {
   if (value === null || value === undefined) return "—";
+  if (referenceMap) return referenceMap.get(String(value)) ?? String(value);
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (Array.isArray(value)) return value.join(", ");
   if (typeof value === "object") return JSON.stringify(value);

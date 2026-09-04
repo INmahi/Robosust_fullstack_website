@@ -1,9 +1,9 @@
 # RoboSUST Phase 1 — implementation plan
 
 > **Status (2026-09-04)**
-> - **Phase 1a — backend/CMS: built, verified, committed.** Schema, RLS, auth, typed content API, generic admin CRUD, Cloudflare R2 upload. See "Phase 1a" below for what exists.
-> - **Phase 1b — public frontend: NOT started. This document's step-by-step plan covers it.**
-> - **Live database is still empty** (`public` schema, 0 tables — verified via Supabase MCP). Migration `0001_init.sql` has never been applied. This is step 1.
+> - **Steps 1-4: done, live, verified in a real browser (Playwright), committed.** Database is live with 18 tables + baseline content, 3 dev CMS accounts work end to end, admin UX redesigned (select/reference fields, grouped nav, real components). Four real bugs found and fixed along the way — see the commit messages for `f1434d3`, `81f5728`, and the list-view fix in the step-4 commit.
+> - **Step 5 onward (the actual frontend port): NOT started.** Everything below "Step 5" is still the plan, not yet built.
+> - Full Supabase MCP access confirmed working as of this session — `apply_migration`/`execute_sql`/`get_advisors` all used directly, no more manual SQL-editor pasting.
 
 ---
 
@@ -68,45 +68,39 @@ Same RLS pattern as everything else: public `SELECT`, writes require a `cms_user
 
 Each step ends in a working, committable state. Commits stay small (one per step, or finer).
 
-### Step 1 — Bring the database live
-1. Apply `0001_init.sql` via Supabase MCP `apply_migration`.
-2. Verify with `list_tables` (expect 18 tables) and spot-check RLS via `get_advisors`.
-3. Seed the 3 **development** CMS accounts via `scripts/seed-cms-users.mjs`, all with `role = 'admin'`:
+### Step 1 — Bring the database live ✅ done
+Applied via Supabase MCP. Two real bugs surfaced immediately (things the never-actually-applied SQL-editor route had never caught):
+- `is_cms_user()`/`is_cms_admin()` are `language sql` functions — their bodies are validated against the catalog at CREATE time, so they must be created *after* `cms_users` exists, not before. Migration reordered.
+- `login()` looked up `cms_users` by the raw (non-lowercased) username, but usernames are stored lowercased — a mixed-case username (`yakSafu122`, exactly what was seeded) could never log in. Fixed in `session.ts`.
 
-   | Username | Full name |
-   |---|---|
-   | `yakSafu122` | Md Yak Safu |
-   | `MollahHamza22444` | Mollah Omor Hamza |
-   | `inMahi787` | Ishat Noor Mahi |
+Seeded the 3 **development** CMS accounts via `scripts/seed-cms-users.mjs`, all `role = 'admin'`: `yakSafu122` (Md Yak Safu), `MollahHamza22444` (Mollah Omor Hamza), `inMahi787` (Ishat Noor Mahi). All three get `admin` deliberately — during development the point is that each person can exercise the whole CMS, including user management. These are **throwaway accounts**; real ones get created fresh once the platform is ready (see "Account lifecycle" below).
 
-   All three get `admin` deliberately: during development the point is that each person can exercise *the whole* CMS, including user management. These are **throwaway accounts** — real accounts get created fresh once the platform is ready (see "Account lifecycle" below), so nothing here needs to reflect actual committee designations.
-4. **Verify:** log in as each; confirm the forced password change on first login. Then exercise the handover flow itself — create a 4th test user from `/admin/users`, log in as them, change their password, delete them. That flow *is* the club's yearly onboarding mechanism, so it needs to work before anything is built on top of it.
+Also applied `get_advisors`' findings (mutable `search_path` on `set_updated_at`, two redundant overlapping SELECT policies each on `notices`/`blog_posts`, a missing index on `navigation_items.parent_id`).
+
+**Verified live in a browser** (Playwright, not just curl): login with the mixed-case username, forced-password-change banner, self-service password change, the full user lifecycle (create a test user from `/admin/users` → temp password shown once → log in as them → delete them), and the auth guard redirecting an unauthenticated request. Also caught and fixed a third bug live: the username `pattern` regex (`[a-z0-9_.-]{3,32}`) is invalid under the `v` flag modern browsers now compile HTML `pattern` attributes with — reordered to `[a-z0-9._-]{3,32}` (hyphen at the end, not mid-class).
 
 #### Account lifecycle (the model this has to support long-term)
 Each time a new Executive Committee is formed, an existing admin (outgoing president, or whoever holds the role) creates accounts for the incoming members from `/admin/users` and hands each person their username + one-time temporary password; the member changes it themselves at `/admin/account`. No email is involved at any point — which is exactly why auth was built on synthetic addresses.
 
 The current build already supports this end to end. Two things worth knowing: `role = 'admin'` is the only role that unlocks user management, so at least one person per cycle must hold it; and creating ~30 accounts one at a time is workable but tedious — see §5 for the bulk-handout idea if that becomes a real pain point.
 
-### Step 2 — Migration `0002` + types
-1. Write `0002_frontend_fields.sql` per §3, apply via MCP.
-2. Update `database.types.ts` to match.
-3. Extend `src/lib/content/home-sections.ts` with `home_section_items` reads (`getHomeSectionWithItems(key)`).
-4. **Verify:** `npm run type-check`.
+### Step 2 — Migration `0002` + types ✅ done
+Applied `0002_frontend_fields.sql`, updated `database.types.ts`, extended `src/lib/content/home-sections.ts` with `getHomeSectionWithItems(key)`. Clean `tsc`.
 
-### Step 3 — Admin UX so the growing schema stays manageable
-This is the "smooth CMS experience" requirement, and it gets *worse* if deferred until after the schema grows.
-1. Add a `select` field kind to `src/lib/admin/content-types.ts` + `content-form.tsx` — real dropdowns for `status`, `events.category`, `navigation_items.group_name`, `agp_blocks.block_key` (currently free-text, easy to typo into a broken page).
-2. Add a `reference` field kind — renders a `<select>` populated from another table. Fixes `gallery_images.album_id` and the new `home_section_items.section_id` (both currently require pasting a raw UUID).
-3. Register `home_section_items` + all new §3 fields.
-4. **Verify:** create a stat item from `/admin` picking its parent section from a dropdown — no UUID typing anywhere.
+### Step 3 — Admin UX so the growing schema stays manageable ✅ done
+Installed the `ui-ux-pro-max` skill (project-scoped, `.claude/skills/ui-ux-pro-max/`) and used its `--design-system` query for an "internal CRUD admin panel" to pick the palette (slate + blue-600, light, matches its "admin panels" typography/style data) rather than guessing. Built:
+- `select` and `reference` field kinds (`content-types.ts`, `content-form.tsx`) — real dropdowns for `status`/`category`/`group_name`/`block_key`, and `reference` renders a `<select>` populated from the actual foreign table (`gallery_images.album_id`, `home_section_items.section_id`) instead of asking for a pasted UUID.
+- Grouped, icon-led sidebar nav with active-route highlighting (`admin-nav.tsx`) — a flat 22-link list is exactly the "overloaded navigation" anti-pattern the skill's `ux-guidelines.csv` flags.
+- Shared class constants (`src/lib/admin/ui-classes.ts`) so every admin page pulls from one input/button/card definition.
+- Table view: `overflow-x-auto` wrapper, icon row-actions, human-readable column headers, and **reference columns resolve to the real referenced row** in the list table too (not just the form) — caught live when `home_section_items`' list showed raw UUIDs instead of "about"/"achievements".
 
-### Step 4 — Seed baseline content
-So the site renders immediately and editors *edit* rather than *invent*. Seeded via SQL (idempotent, `on conflict do nothing`):
-- `site_settings` — name, tagline, socials, footer note, background image.
-- `navigation_items` — 5 primary (Home/Event/Projects/Blog/Forum) + 5 footer.
-- `home_sections` — `hero`, `about`, `achievements`, `blog` with the reference design's real copy.
-- `home_section_items` — About's 3 stats, Achievements' 2 metrics.
-- **Verify:** every row visible and editable in `/admin`.
+**Three more real bugs found live** (Playwright, not just tsc/lint/build — all three passed clean and still shipped these):
+1. `globals.css`'s `--font-sans` theme token pointed at itself (`var(--font-sans)`) instead of `var(--font-geist-sans)` — every admin page was silently falling back to the browser default serif font since the *original scaffold commit*, invisible until actually looking at a screenshot.
+2. `form-parsing.ts` sent explicit `null` for an empty optional number field. Several NOT-NULL-with-DEFAULT columns (`sort_order`, on nearly every table) reject that outright — an explicit null in an INSERT/UPDATE overrides the column default. Fixed by omitting the key instead of sending null when empty and optional.
+3. Importing a plain data object (not a component) from a `"use client"` file into a Server Component doesn't reliably cross the RSC boundary — the dashboard's per-type icons all silently rendered the same fallback icon until the icon map was moved to its own plain module (`nav-icons.ts`).
+
+### Step 4 — Seed baseline content ✅ done
+Seeded via `0003_baseline_content.sql` (idempotent — `on conflict do nothing` / `where not exists`): `site_settings` (tagline, background image, footer note), 10 `navigation_items` (5 primary + 5 footer, matching `SiteHeader.tsx`/`SiteFooter.tsx`'s real anchors), 4 `home_sections` (`hero`/`about`/`achievements`/`blog`) with the reference design's actual copy, 5 `home_section_items` (About's 3 stats, Achievements' 2 metrics). **Verified live**: every row renders correctly in `/admin`, including through the reference-column fix above.
 
 ### Step 5 — Route restructure: isolate public from admin
 Root layout only renders `<html>`/`<body>`, so the dark theme **cannot** live on `<body>` without breaking the light admin.
@@ -165,4 +159,4 @@ Also deferred:
 - **Full names confirmed:** Md Yak Safu, Mollah Omor Hamza, Ishat Noor Mahi.
 - **Seeding the reference design's placeholder copy is approved** for Step 4 — the site should render fully populated so editors have something to edit. Real copy replaces it through the CMS before launch; nothing about that requires a code change.
 - **Theme:** dark, per the reference frontend. frontend-overview.md's "light-first" section is superseded and should be ignored; that document governs pages/content only.
-- **No open blockers.** Step 1 can start on approval.
+- **No open blockers.** Steps 1-4 are done; Step 5 (route restructure) is next.
