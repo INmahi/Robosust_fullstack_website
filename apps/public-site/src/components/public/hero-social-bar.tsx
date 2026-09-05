@@ -18,7 +18,7 @@ export function HeroSocialBar({ facebook, linkedin, whatsapp }: HeroSocialBarPro
 
   const items: ReactNode[] = [];
   links.forEach((link, index) => {
-    if (index > 0) items.push(<span key={`divider-${index}`} className="h-6 w-px bg-white/20" />);
+    if (index > 0) items.push(<span key={`divider-${index}`} className="h-7 w-px bg-white/20" />);
     items.push(
       <a
         key={link.label}
@@ -28,10 +28,10 @@ export function HeroSocialBar({ facebook, linkedin, whatsapp }: HeroSocialBarPro
         aria-label={link.label}
         className="text-white/85 transition hover:text-[#d4af37]"
       >
-        <link.Icon size={18} />
+        <link.Icon size={26} />
       </a>,
     );
   });
 
-  return <div className="reveal hidden shrink-0 flex-col items-center gap-4 md:flex">{items}</div>;
+  return <div className="reveal hidden shrink-0 flex-col items-center gap-5 md:flex">{items}</div>;
 }
