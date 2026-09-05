@@ -59,12 +59,23 @@ export default async function SettingsPage({
               <input name={field.key} defaultValue={value(field.key)} className={inputClass} />
             </label>
           ))}
-          <ImageUrlField name="logo_url" label="Logo" defaultValue={value("logo_url")} />
-          <ImageUrlField name="favicon_url" label="Favicon" defaultValue={value("favicon_url")} />
+          <ImageUrlField
+            name="logo_url"
+            label="Logo"
+            defaultValue={value("logo_url")}
+            hint="Not currently shown on the site (the ROBOSUST wordmark is hardcoded text) — reserved for future use."
+          />
+          <ImageUrlField
+            name="favicon_url"
+            label="Favicon"
+            defaultValue={value("favicon_url")}
+            hint="512×512px PNG. Not yet wired into page metadata — see IMPLEMENTATION_PLAN.md."
+          />
           <ImageUrlField
             name="background_image_url"
             label="Site background image"
             defaultValue={value("background_image_url")}
+            hint="Wide landscape, at least 1920×1080px — this is the fixed backdrop behind the entire site."
           />
         </section>
 

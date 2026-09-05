@@ -42,6 +42,7 @@ export async function ContentFormFields({
             label={field.label}
             required={field.required}
             defaultValue={value}
+            hint={field.recommendedSize}
           />
         );
       }

@@ -27,6 +27,9 @@ export type FieldConfig = {
   /** kind: "reference" — a foreign key, rendered as a <select> populated
    * from another table's rows instead of a pasted-in UUID. */
   reference?: { table: string; labelField: string };
+  /** kind: "image-url" — recommended dimensions for this specific slot,
+   * shown as a hint right next to the upload control. */
+  recommendedSize?: string;
 };
 
 export type ContentTypeConfig = {
@@ -65,7 +68,12 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "image_url", label: "Image", kind: "image-url" },
+      {
+        key: "image_url",
+        label: "Image",
+        kind: "image-url",
+        recommendedSize: "Landscape, ~1600×900px (16:9) — used as a wide card background.",
+      },
       { key: "competition", label: "Competition", kind: "text" },
       { key: "year", label: "Year", kind: "number" },
       { key: "position", label: "Position/result", kind: "text" },
@@ -86,7 +94,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Short description", kind: "textarea" },
       { key: "body", label: "Full body", kind: "textarea" },
-      { key: "cover_image_url", label: "Cover image", kind: "image-url" },
+      {
+        key: "cover_image_url",
+        label: "Cover image",
+        kind: "image-url",
+        recommendedSize: "Landscape, ~1200×675px (16:9) — shown in a 220px-tall card.",
+      },
       { key: "images", label: "Gallery image URLs", kind: "string-array" },
       {
         key: "status",
@@ -114,7 +127,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "slug", label: "Slug", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text", required: true },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "image_url", label: "Image", kind: "image-url" },
+      {
+        key: "image_url",
+        label: "Image",
+        kind: "image-url",
+        recommendedSize: "Landscape or square, ~1200×1000px — fills a tall image panel.",
+      },
       {
         key: "category",
         label: "Category",
@@ -141,7 +159,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "category", label: "Category (e.g. Build log, Engineering, Lab notes)", kind: "text" },
       { key: "excerpt", label: "Excerpt", kind: "textarea" },
       { key: "content", label: "Content", kind: "textarea" },
-      { key: "image_url", label: "Image", kind: "image-url" },
+      {
+        key: "image_url",
+        label: "Image",
+        kind: "image-url",
+        recommendedSize: "Landscape, ~1200×675px (16:9) — shown in a 190px-tall card.",
+      },
       { key: "author", label: "Author", kind: "text" },
       { key: "published", label: "Published", kind: "boolean" },
     ],
@@ -158,7 +181,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "designation", label: "Designation", kind: "text", required: true },
       { key: "department_session", label: "Department + session (e.g. EEE'21)", kind: "text" },
       { key: "tier_group", label: "Tier group (e.g. Core EC, R&D)", kind: "text" },
-      { key: "photo_url", label: "Photo", kind: "image-url" },
+      {
+        key: "photo_url",
+        label: "Photo",
+        kind: "image-url",
+        recommendedSize: "Portrait headshot, ~800×1000px (4:5), centered on the face.",
+      },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
     listColumns: ["name", "designation", "tier_group"],
@@ -174,7 +202,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "name", label: "Name", kind: "text", required: true },
       { key: "department", label: "Department", kind: "text" },
       { key: "batch", label: "Batch", kind: "text" },
-      { key: "photo_url", label: "Photo", kind: "image-url" },
+      {
+        key: "photo_url",
+        label: "Photo",
+        kind: "image-url",
+        recommendedSize: "Portrait headshot, ~800×1000px (4:5), centered on the face.",
+      },
       { key: "current_position", label: "Current position", kind: "text" },
       { key: "linkedin_url", label: "LinkedIn URL", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
@@ -191,7 +224,12 @@ export const contentTypes: ContentTypeConfig[] = [
     fields: [
       { key: "slug", label: "Slug", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text", required: true },
-      { key: "cover_image_url", label: "Cover image", kind: "image-url" },
+      {
+        key: "cover_image_url",
+        label: "Cover image",
+        kind: "image-url",
+        recommendedSize: "Landscape, ~1200×800px.",
+      },
       { key: "album_date", label: "Date", kind: "date" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
@@ -212,7 +250,13 @@ export const contentTypes: ContentTypeConfig[] = [
         required: true,
         reference: { table: "gallery_albums", labelField: "title" },
       },
-      { key: "image_url", label: "Image", kind: "image-url", required: true },
+      {
+        key: "image_url",
+        label: "Image",
+        kind: "image-url",
+        required: true,
+        recommendedSize: "Any — original resolution up to ~2000px on the long edge.",
+      },
       { key: "caption", label: "Caption", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
@@ -274,8 +318,18 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "heading", label: "Heading", kind: "text" },
       { key: "subheading", label: "Subheading", kind: "textarea" },
       { key: "body", label: "Body copy", kind: "textarea" },
-      { key: "background_image_url", label: "Background image", kind: "image-url" },
-      { key: "secondary_image_url", label: "Secondary image", kind: "image-url" },
+      {
+        key: "background_image_url",
+        label: "Background image",
+        kind: "image-url",
+        recommendedSize: "Wide landscape, at least 1920×1080px — fills the entire section width.",
+      },
+      {
+        key: "secondary_image_url",
+        label: "Secondary image",
+        kind: "image-url",
+        recommendedSize: "Portrait or square, ~1000×1200px — shown in a tall side panel.",
+      },
       { key: "stat_text", label: "Stat text", kind: "text" },
       { key: "cta_text", label: "Primary CTA text", kind: "text" },
       { key: "cta_url", label: "Primary CTA URL", kind: "text" },
@@ -304,7 +358,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "value", label: "Value (e.g. 01, 12+)", kind: "text" },
       { key: "label", label: "Label (e.g. Think, Build)", kind: "text" },
       { key: "body", label: "Body text", kind: "textarea" },
-      { key: "image_url", label: "Image", kind: "image-url" },
+      {
+        key: "image_url",
+        label: "Image",
+        kind: "image-url",
+        recommendedSize: "Not currently rendered on the homepage (stat/metric cards show text only).",
+      },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
     listColumns: ["section_id", "value", "label"],
@@ -320,7 +379,12 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "page_key", label: "Page key", kind: "text", required: true },
       { key: "title", label: "Title", kind: "text" },
       { key: "description", label: "Description", kind: "textarea" },
-      { key: "share_image_url", label: "Share image", kind: "image-url" },
+      {
+        key: "share_image_url",
+        label: "Share image",
+        kind: "image-url",
+        recommendedSize: "1200×630px — the standard Open Graph / social-share preview size.",
+      },
     ],
     listColumns: ["page_key", "title"],
     allowCreate: true,

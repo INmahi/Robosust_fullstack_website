@@ -14,11 +14,15 @@ export function ImageUrlField({
   label,
   required,
   defaultValue,
+  hint,
 }: {
   name: string;
   label: string;
   required?: boolean;
   defaultValue?: string;
+  /** Recommended dimensions for this specific slot — shown right where the
+   * upload happens, since that's the one place someone can't miss it. */
+  hint?: string;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +52,7 @@ export function ImageUrlField({
   return (
     <label className={labelClass}>
       {label}
+      {hint && <span className="text-xs font-normal text-slate-400">{hint}</span>}
       <div className="flex gap-3">
         {value && (
           // Admin-only preview thumbnail — plain <img>, not next/image, to
