@@ -1,5 +1,7 @@
+import { HeadingLines } from "./heading-lines";
+
 type SectionHeadingProps = {
-  eyebrow: string;
+  eyebrow?: string | null;
   title: React.ReactNode;
   description?: string | null;
 };
@@ -11,7 +13,11 @@ export function SectionHeading({ eyebrow, title, description }: SectionHeadingPr
         {eyebrow && (
           <div className="mb-3 text-[11px] uppercase tracking-[0.18em] text-[#8e98aa]">{eyebrow}</div>
         )}
-        <h2 className="text-[clamp(36px,5vw,64px)] font-bold leading-[0.95] tracking-[-0.045em]">{title}</h2>
+        <h2 className="text-[clamp(36px,5vw,64px)] font-bold leading-[0.95] tracking-[-0.045em]">
+          {/* CMS headings are plain strings; a newline in one is the editable
+              stand-in for the reference design's literal <br/>. */}
+          {typeof title === "string" ? <HeadingLines text={title} /> : title}
+        </h2>
       </div>
       {description && <p className="max-w-[440px] text-[14px] leading-7 text-[#98a1b3]">{description}</p>}
     </div>
