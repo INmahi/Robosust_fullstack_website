@@ -2,7 +2,7 @@
 
 Monorepo for the RoboSUST website rebuild (Phase 1: CMS + public site; Phase 2, later: EC Portal). Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first — it has the current status and the exact steps to bring the backend live. This file is an index of what lives where; keep it updated as files are added, don't let it drift.
 
-**Before grepping/reading broadly to answer an architecture, relationship, or impact question** ("how does X work", "what calls Y", "what would break if I changed Z") — check whether `graphify-out/graph.json` exists and is reasonably fresh, and use a `graphify` query instead (see the dedicated section below). One targeted query is far cheaper than crawling the codebase file-by-file.
+**When you have a symbol name and want to know what touches it** — "what calls `getHomeSectionByKey`", "what breaks if I change `getVisibleNavigation`", "how do `SiteHeader` and `navigation_items` connect" — run `graphify affected` / `explain` / `path` instead of grepping. Those are symbol-anchored and answer in ~15 lines with exact file:line. **They do not replace reading a file you are about to edit** — for that, read the file.
 
 ## Planning docs (repo root)
 
@@ -26,28 +26,34 @@ Installed from `github.com/nextlevelbuilder/ui-ux-pro-max-skill` (2026-09-04). S
 
 ## `graphify` — codebase knowledge graph (local dev tool, not project-scoped)
 
-Installed 2026-09-06 (`github.com/Graphify-Labs/graphify`; PyPI package `graphifyy`; CLI command `graphify`). The skill is registered **globally** at `~/.claude/skills/graphify/` (available in every project on this machine, not committed here) — its own description already triggers it for "any question about a codebase, its architecture, file relationships" whenever `graphify-out/` exists, so a fresh session should reach for a query below before grepping/reading broadly.
+Installed 2026-09-06 (`github.com/Graphify-Labs/graphify`; PyPI package `graphifyy`; CLI command `graphify`). The skill is registered **globally** at `~/.claude/skills/graphify/` (available in every project on this machine, not committed here) — its own description triggers it for "any question about a codebase, its architecture, file relationships" whenever `graphify-out/` exists — but read the query surface below before trusting that: only three of its five commands are actually worth reaching for on this repo.
 
-**Output**: `graphify-out/` — gitignored (regenerable, goes stale on every commit). Holds `graph.json` (933 nodes / 1730 edges at the initial build), `graph.html` (visual browser), `GRAPH_REPORT.md` (god nodes, communities, cross-file "surprising connections", import-cycle check).
+**Output**: `graphify-out/` — gitignored (regenerable, goes stale on every commit). Holds `graph.json` (529 nodes / 934 edges on the scoped build below), `graph.html` (visual browser), `GRAPH_REPORT.md` (god nodes, communities, cross-file "surprising connections", import-cycle check).
 
-**Maintenance — run after any non-trivial batch of changes:**
+**Maintenance — run after any non-trivial batch of changes. Do NOT run `graphify update .`:**
 ```
-graphify update .
+graphify update apps
+graphify update packages
+graphify merge-graphs apps/graphify-out/graph.json packages/graphify-out/graph.json --out graphify-out/graph.json
 ```
-Fast, local, no LLM/API cost — re-extracts only the changed code files. Check staleness first if unsure: compare `git rev-parse HEAD` against the "Built from commit" line at the top of `GRAPH_REPORT.md`.
+Fast, local, no LLM/API cost. **Why not `update .`** (measured 2026-09-06): extracting from the repo root pulls in `.claude/skills/ui-ux-pro-max/scripts/` — 467 of 1134 nodes, **41% of the graph was the skill's Python test fixtures**, and it actively polluted results (a query about `home_sections` returned `test_data_contracts.py` and `parse_decision_rules()`). There is no `--exclude` flag, so scoping the extraction and merging is the workaround. The scoped build is 529 nodes / 934 edges, all real app code, and drops skill hits to zero. The two extra `graphify-out/` dirs are already gitignored by the existing rule.
 
-Heavier commands, only when actually needed:
-- `graphify extract . --code-only` — full re-scan from scratch (e.g. after a big rename/refactor where `update` seems to have drifted; add `--force` to overwrite even if the rebuild looks smaller).
-- `graphify cluster-only .` — regenerates `GRAPH_REPORT.md` and community labels. **Needs a real LLM API key to name communities meaningfully** — none is configured in this environment, so communities currently show as placeholder "Community N" (the graph itself is still fully queryable regardless). Confirmed live: `--backend=claude` requires `ANTHROPIC_API_KEY` set — it does **not** piggyback on the Claude Code CLI session for free.
+Check staleness first if unsure: compare `git rev-parse HEAD` against the "Built from commit" line at the top of `GRAPH_REPORT.md`.
 
-**Query surface** — use these, not a raw read of `graph.json` (1.2MB+, far more context than a targeted query needs):
-- `graphify query "<question>"` — natural-language BFS traversal
-- `graphify explain "<symbol>"` — everything connected to one node
-- `graphify path "A" "B"` — shortest relationship between two symbols
-- `graphify affected "<symbol>"` — reverse-impact / what would break
-- `graphify god-nodes` — most-connected symbols = the real architectural hubs
+**Query surface — what each is actually good for** (all tested against this repo on 2026-09-06):
+- `graphify affected "<symbol>"` — **the best one.** Reverse impact: `affected "getHomeSectionByKey"` returns all 11 callers with exact file:line. This is the "what would break" answer.
+- `graphify explain "<symbol>"` — one node and its neighbours, ~15 lines. Good for learning a component's shape without opening it.
+- `graphify path "A" "B"` — shortest relationship between two symbols.
+- `graphify god-nodes` — most-connected symbols = the real architectural hubs.
+- `graphify query "<question>"` — **weak here, treat as a last resort.** Natural-language BFS seeds from fuzzy label matches, so it latches onto `components.json` / `README.md` and then truncates at a 2000-token budget (54 of 110 nodes on a normal question), meaning the answer may be in the part it cut. It also cannot answer anything about string values — section keys, config literals, column names — because the AST graph doesn't model them. Raise `--budget` or narrow with `--context` if you must use it.
 
-**Deliberately not installed**: `graphify claude install` — the more invasive variant that writes a section into *this* file and adds a PreToolUse hook firing on every tool call. Plain `install` + manual `update` covers the workflow without either the auto-edit risk or the per-call overhead. Also skipped: SQL parsing (`tree_sitter_sql` isn't installed, so the 4 files under `supabase/migrations/` aren't in the graph yet — `pip install "graphifyy[sql]"` then re-extract to include them).
+**Where graphify does NOT help, so don't reach for it:** reading a file you're about to edit (you need the exact text), anything about SQL/migrations (see gap below), and anything about string literals or CMS data.
+
+**Known gap — the migrations aren't in the graph.** `tree_sitter_sql` isn't installed, so the 5 files under `supabase/migrations/` contribute nothing (every extraction warns about this). That matters more here than in most repos: a lot of this project's real structure lives in Postgres, not TypeScript. Two ways to close it, neither done yet:
+- `pip install "graphifyy[sql]"` then re-extract — parses the migration *files*.
+- `graphify extract . --postgres <DSN>` — maps the **live** schema: tables, views, functions and FK relationships (column-level detail is not represented). Better fit, since the live DB is the source of truth and the migrations are just how it got there. Needs the Supabase connection string.
+
+**Deliberately not installed**: `graphify claude install` — the more invasive variant that writes a section into *this* file and adds a PreToolUse hook firing on every tool call. Plain `install` + manual maintenance covers the workflow without either the auto-edit risk or the per-call overhead.
 
 ## `apps/public-site` — the Next.js app (public site + `/admin` CMS)
 
