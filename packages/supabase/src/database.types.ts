@@ -87,6 +87,10 @@ export interface Database {
         Row: {
           id: string;
           section_key: string;
+          /** Which public route this section belongs to ("home", "about",
+           * "events", "projects", "committee") — the table outgrew the
+           * homepage in migration 0004. */
+          page: string;
           eyebrow: string | null;
           heading: string | null;
           subheading: string | null;
@@ -113,6 +117,8 @@ export interface Database {
           label: string | null;
           body: string | null;
           image_url: string | null;
+          /** lucide icon name, resolved by components/public/section-icons.ts. */
+          icon: string | null;
           sort_order: number;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["home_section_items"]["Row"]> & { section_id: string };
@@ -222,6 +228,8 @@ export interface Database {
           designation: string;
           department_session: string | null;
           tier_group: string | null;
+          email: string | null;
+          linkedin_url: string | null;
           sort_order: number;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["committee_members"]["Row"]> & {
