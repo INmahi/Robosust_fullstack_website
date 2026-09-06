@@ -1,21 +1,17 @@
 import { ArrowRight, Calendar, MapPin, Users } from "lucide-react";
-import { getUpcomingEvents } from "@/lib/content/events";
+import { getUpcomingEvents, type Event } from "@/lib/content/events";
+import { formatEventCategory, formatEventDate } from "./event-format";
 import { SectionHeading } from "./section-heading";
 
-const categoryLabels: Record<string, string> = {
-  workshop: "Workshop",
-  seminar: "Seminar",
-  competition: "Competition",
-  meeting: "Meeting",
-};
-
-export async function EventsSection() {
-  const [event] = await getUpcomingEvents(1);
+// `event` is optional: the homepage lets the section pick the next upcoming
+// event itself, while /events already has the full upcoming list in hand and
+// passes the first row in rather than re-querying for it.
+export async function EventsSection({ event: provided }: { event?: Event | null } = {}) {
+  const event = provided !== undefined ? provided : (await getUpcomingEvents(1))[0];
   if (!event) return null;
 
-  const date = event.event_date
-    ? new Date(event.event_date).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
-    : "Date to be announced";
+  const date = formatEventDate(event.event_date);
+  const category = formatEventCategory(event.category);
 
   return (
     <section id="events" className="py-[110px]">
@@ -46,10 +42,10 @@ export async function EventsSection() {
                   {event.location}
                 </div>
               )}
-              {event.category && (
+              {category && (
                 <div className="flex items-center gap-3 text-[13px] text-[#c9d0db]">
                   <Users size={16} className="text-[#3d7cff]" />
-                  {categoryLabels[event.category] ?? event.category}
+                  {category}
                 </div>
               )}
             </div>
