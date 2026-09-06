@@ -1,0 +1,65 @@
+# What graphify should not put in the knowledge graph.
+#
+# IMPORTANT — why this file duplicates .gitignore instead of just adding to it:
+# graphify's README says .graphifyignore is *merged* with .gitignore, but
+# Graphify-Labs/graphify#1363 reports it actually *replaces* it — a directory
+# containing a .graphifyignore stops having its .gitignore read at all. That
+# issue was verified on 0.8.40 and closed with no stated fix; we're on 0.9.55,
+# so we don't rely on either behaviour. Every .gitignore pattern is repeated
+# here, which is correct under both: if it merges, the duplicates are inert;
+# if it replaces, nothing is silently re-included.
+#
+# The consequence of getting this wrong is not cosmetic — .env.local holds the
+# real Supabase service-role key and the Cloudflare R2 credentials. Those must
+# never end up in graph.json.
+#
+# If you add a pattern to .gitignore, add it here too.
+
+# --- the actual reason this file exists ------------------------------------
+# ui-ux-pro-max is a vendored design-reference skill, not our code. Extracting
+# it put 467 of 1134 nodes (41% of the graph) into its Python test fixtures,
+# and polluted real queries: asking about home_sections returned
+# test_data_contracts.py and parse_decision_rules(). Nothing in here is ever
+# the answer to a question about this codebase.
+.claude/skills/
+
+# --- mirrored from .gitignore ----------------------------------------------
+node_modules/
+.pnp/
+.pnp.js
+
+.next/
+out/
+
+.turbo/
+
+build/
+dist/
+
+# Env files (never commit secrets, never index them either)
+.env
+.env.*
+.env.local
+.env.*.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.DS_Store
+*.pem
+.vscode/*
+.idea/
+
+*.tsbuildinfo
+next-env.d.ts
+
+supabase/.branches
+supabase/.temp
+
+__pycache__/
+*.pyc
+.playwright-mcp/
+
+graphify-out/

@@ -28,17 +28,17 @@ Installed from `github.com/nextlevelbuilder/ui-ux-pro-max-skill` (2026-09-04). S
 
 Installed 2026-09-06 (`github.com/Graphify-Labs/graphify`; PyPI package `graphifyy`; CLI command `graphify`). The skill is registered **globally** at `~/.claude/skills/graphify/` (available in every project on this machine, not committed here) — its own description triggers it for "any question about a codebase, its architecture, file relationships" whenever `graphify-out/` exists — but read the query surface below before trusting that: only three of its five commands are actually worth reaching for on this repo.
 
-**Output**: `graphify-out/` — gitignored (regenerable, goes stale on every commit). Holds `graph.json` (529 nodes / 934 edges on the scoped build below), `graph.html` (visual browser), `GRAPH_REPORT.md` (god nodes, communities, cross-file "surprising connections", import-cycle check).
+**Output**: `graphify-out/` — gitignored (regenerable, goes stale on every commit). Holds `graph.json` (666 nodes / 1170 edges), `graph.html` (visual browser), `GRAPH_REPORT.md` (god nodes, communities, cross-file "surprising connections", import-cycle check).
 
-**Maintenance — run after any non-trivial batch of changes. Do NOT run `graphify update .`:**
-```
-graphify update apps
-graphify update packages
-graphify merge-graphs apps/graphify-out/graph.json packages/graphify-out/graph.json --out graphify-out/graph.json
-```
-Fast, local, no LLM/API cost. **Why not `update .`** (measured 2026-09-06): extracting from the repo root pulls in `.claude/skills/ui-ux-pro-max/scripts/` — 467 of 1134 nodes, **41% of the graph was the skill's Python test fixtures**, and it actively polluted results (a query about `home_sections` returned `test_data_contracts.py` and `parse_decision_rules()`). There is no `--exclude` flag, so scoping the extraction and merging is the workaround. The scoped build is 529 nodes / 934 edges, all real app code, and drops skill hits to zero. The two extra `graphify-out/` dirs are already gitignored by the existing rule.
+**What's excluded — [`.graphifyignore`](.graphifyignore) (committed, read it before changing extraction).** graphify respects `.gitignore` automatically and `.graphifyignore` on top of it, `.gitignore` syntax including `!` negation. Ours exists for one reason: `.claude/skills/ui-ux-pro-max/` is a vendored design-reference skill, and extracting it put **467 of 1134 nodes — 41% of the graph — into its Python test fixtures**, polluting real queries (asking about `home_sections` returned `test_data_contracts.py`). Excluding it: 666 nodes, zero skill hits, and the planning docs still in.
 
-Check staleness first if unsure: compare `git rev-parse HEAD` against the "Built from commit" line at the top of `GRAPH_REPORT.md`.
+**That file deliberately repeats every `.gitignore` pattern, and must keep doing so.** The README says the two files merge; [graphify#1363](https://github.com/Graphify-Labs/graphify/issues/1363) reports `.graphifyignore` actually *replaces* a directory's `.gitignore` — verified on 0.8.40, closed with no stated fix, and we run 0.9.55. Duplicating the patterns is correct under either behaviour. Getting it wrong would index `.env.local`, which holds the real Supabase service-role key and the R2 credentials. **Add a pattern to `.gitignore` → add it to `.graphifyignore` too.**
+
+**Maintenance — run after any non-trivial batch of changes:**
+```
+graphify update .
+```
+Fast, local, no LLM/API cost — re-extracts only changed code files. Check staleness first if unsure: compare `git rev-parse HEAD` against the "Built from commit" line at the top of `GRAPH_REPORT.md`.
 
 **Query surface — what each is actually good for** (all tested against this repo on 2026-09-06):
 - `graphify affected "<symbol>"` — **the best one.** Reverse impact: `affected "getHomeSectionByKey"` returns all 11 callers with exact file:line. This is the "what would break" answer.
