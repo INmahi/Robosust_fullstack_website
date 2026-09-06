@@ -2,6 +2,8 @@
 
 Monorepo for the RoboSUST website rebuild (Phase 1: CMS + public site; Phase 2, later: EC Portal). Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) first — it has the current status and the exact steps to bring the backend live. This file is an index of what lives where; keep it updated as files are added, don't let it drift.
 
+**Before grepping/reading broadly to answer an architecture, relationship, or impact question** ("how does X work", "what calls Y", "what would break if I changed Z") — check whether `graphify-out/graph.json` exists and is reasonably fresh, and use a `graphify` query instead (see the dedicated section below). One targeted query is far cheaper than crawling the codebase file-by-file.
+
 ## Planning docs (repo root)
 
 - [SRS.md](SRS.md) — formal Software Requirements Spec: phases, data model, roles, Phase 2 EC Portal design.
@@ -21,6 +23,31 @@ Monorepo for the RoboSUST website rebuild (Phase 1: CMS + public site; Phase 2, 
 ## `.claude/skills/ui-ux-pro-max` — design-intelligence skill (project-scoped)
 
 Installed from `github.com/nextlevelbuilder/ui-ux-pro-max-skill` (2026-09-04). Self-contained — `scripts/search.py` resolves its `data/` directory relative to itself, no plugin/marketplace machinery needed. Searchable style/color/typography/UX-guideline database; used to inform the `/admin` visual redesign (see IMPLEMENTATION_PLAN.md Step 3). Invoke via `python .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain>` — see its own `SKILL.md` for the full query contract.
+
+## `graphify` — codebase knowledge graph (local dev tool, not project-scoped)
+
+Installed 2026-09-06 (`github.com/Graphify-Labs/graphify`; PyPI package `graphifyy`; CLI command `graphify`). The skill is registered **globally** at `~/.claude/skills/graphify/` (available in every project on this machine, not committed here) — its own description already triggers it for "any question about a codebase, its architecture, file relationships" whenever `graphify-out/` exists, so a fresh session should reach for a query below before grepping/reading broadly.
+
+**Output**: `graphify-out/` — gitignored (regenerable, goes stale on every commit). Holds `graph.json` (933 nodes / 1730 edges at the initial build), `graph.html` (visual browser), `GRAPH_REPORT.md` (god nodes, communities, cross-file "surprising connections", import-cycle check).
+
+**Maintenance — run after any non-trivial batch of changes:**
+```
+graphify update .
+```
+Fast, local, no LLM/API cost — re-extracts only the changed code files. Check staleness first if unsure: compare `git rev-parse HEAD` against the "Built from commit" line at the top of `GRAPH_REPORT.md`.
+
+Heavier commands, only when actually needed:
+- `graphify extract . --code-only` — full re-scan from scratch (e.g. after a big rename/refactor where `update` seems to have drifted; add `--force` to overwrite even if the rebuild looks smaller).
+- `graphify cluster-only .` — regenerates `GRAPH_REPORT.md` and community labels. **Needs a real LLM API key to name communities meaningfully** — none is configured in this environment, so communities currently show as placeholder "Community N" (the graph itself is still fully queryable regardless). Confirmed live: `--backend=claude` requires `ANTHROPIC_API_KEY` set — it does **not** piggyback on the Claude Code CLI session for free.
+
+**Query surface** — use these, not a raw read of `graph.json` (1.2MB+, far more context than a targeted query needs):
+- `graphify query "<question>"` — natural-language BFS traversal
+- `graphify explain "<symbol>"` — everything connected to one node
+- `graphify path "A" "B"` — shortest relationship between two symbols
+- `graphify affected "<symbol>"` — reverse-impact / what would break
+- `graphify god-nodes` — most-connected symbols = the real architectural hubs
+
+**Deliberately not installed**: `graphify claude install` — the more invasive variant that writes a section into *this* file and adds a PreToolUse hook firing on every tool call. Plain `install` + manual `update` covers the workflow without either the auto-edit risk or the per-call overhead. Also skipped: SQL parsing (`tree_sitter_sql` isn't installed, so the 4 files under `supabase/migrations/` aren't in the graph yet — `pip install "graphifyy[sql]"` then re-extract to include them).
 
 ## `apps/public-site` — the Next.js app (public site + `/admin` CMS)
 
