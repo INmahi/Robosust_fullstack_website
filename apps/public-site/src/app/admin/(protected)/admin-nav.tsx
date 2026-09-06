@@ -11,7 +11,10 @@ import { CONTENT_TYPE_ICONS, DEFAULT_CONTENT_TYPE_ICON } from "@/lib/admin/nav-i
 // separated) keep every link one click away without one undifferentiated list.
 
 const GROUPS: { label: string; slugs: string[] }[] = [
-  { label: "Site", slugs: ["navigation-items", "home-sections", "home-section-items", "seo-metadata"] },
+  {
+    label: "Pages & Navigation",
+    slugs: ["navigation-items", "home-sections", "home-section-items", "seo-metadata"],
+  },
   {
     label: "Content",
     slugs: [

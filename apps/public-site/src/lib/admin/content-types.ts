@@ -4,6 +4,8 @@
 // site_settings isn't here — it's a singleton with its own /admin/settings
 // page instead of a list+id route.
 
+import { SECTION_ICON_NAMES } from "@/components/public/section-icons";
+
 export type FieldKind =
   | "text"
   | "textarea"
@@ -38,10 +40,32 @@ export type ContentTypeConfig = {
   label: string;
   fields: FieldConfig[];
   listColumns: string[]; // subset of field keys shown in the table view
-  sortColumn?: string;
+  /** One column, or several applied in order (e.g. ["page", "sort_order"]). */
+  sortColumn?: string | string[];
   allowCreate: boolean;
   allowDelete: boolean;
 };
+
+// Every public route that has editable sections, and every section key a
+// component actually reads. Both are fixed sets rendered as dropdowns so an
+// editor can't strand a row under a page or key nothing renders.
+const PAGE_KEYS = ["home", "about", "events", "projects", "committee"];
+
+const SECTION_KEYS = [
+  "hero",
+  "about",
+  "achievements",
+  "blog",
+  "about_intro",
+  "about_principles",
+  "events_intro",
+  "events_calendar",
+  "projects_intro",
+  "projects_shelf",
+  "projects_cta",
+  "committee_intro",
+  "committee_list",
+];
 
 export const contentTypes: ContentTypeConfig[] = [
   {
@@ -187,6 +211,10 @@ export const contentTypes: ContentTypeConfig[] = [
         kind: "image-url",
         recommendedSize: "Portrait headshot, ~800×1000px (4:5), centered on the face.",
       },
+      // Both optional — the /executive-members card shows each icon only when
+      // its field is filled, the same rule the header social links follow.
+      { key: "email", label: "Email (optional — shows a mail icon on the card)", kind: "text" },
+      { key: "linkedin_url", label: "LinkedIn URL (optional)", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
     listColumns: ["name", "designation", "tier_group"],
@@ -311,11 +339,31 @@ export const contentTypes: ContentTypeConfig[] = [
   {
     slug: "home-sections",
     table: "home_sections",
-    label: "Home Sections",
+    label: "Page Sections",
     fields: [
-      { key: "section_key", label: "Section key", kind: "text", required: true },
+      {
+        key: "page",
+        label: "Page",
+        kind: "select",
+        required: true,
+        options: PAGE_KEYS,
+      },
+      {
+        key: "section_key",
+        label: "Section key",
+        kind: "select",
+        required: true,
+        // A fixed set, not free text: each key is read by name from a specific
+        // component, so a made-up key would save fine and then render nowhere.
+        // Adding a section here means adding the component that reads it.
+        options: SECTION_KEYS,
+      },
       { key: "eyebrow", label: "Eyebrow (small label above heading)", kind: "text" },
-      { key: "heading", label: "Heading", kind: "text" },
+      {
+        key: "heading",
+        label: "Heading (press Enter for a line break — on a page's top banner, lines after the first render outlined)",
+        kind: "textarea",
+      },
       { key: "subheading", label: "Subheading", kind: "textarea" },
       { key: "body", label: "Body copy", kind: "textarea" },
       {
@@ -338,15 +386,15 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "visible", label: "Visible", kind: "boolean" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
-    listColumns: ["section_key", "heading", "visible"],
-    sortColumn: "sort_order",
+    listColumns: ["page", "section_key", "heading", "visible"],
+    sortColumn: ["page", "sort_order"],
     allowCreate: true,
     allowDelete: true,
   },
   {
     slug: "home-section-items",
     table: "home_section_items",
-    label: "Home Section Cards",
+    label: "Section Cards",
     fields: [
       {
         key: "section_id",
@@ -355,19 +403,27 @@ export const contentTypes: ContentTypeConfig[] = [
         required: true,
         reference: { table: "home_sections", labelField: "section_key" },
       },
-      { key: "value", label: "Value (e.g. 01, 12+)", kind: "text" },
-      { key: "label", label: "Label (e.g. Think, Build)", kind: "text" },
+      { key: "value", label: "Value (e.g. 12+, 24/7 — used by the Achievements metric cards)", kind: "text" },
+      { key: "label", label: "Label / card title", kind: "text" },
       { key: "body", label: "Body text", kind: "textarea" },
+      {
+        key: "icon",
+        label: "Icon (About page principle cards only)",
+        kind: "select",
+        options: SECTION_ICON_NAMES,
+      },
       {
         key: "image_url",
         label: "Image",
         kind: "image-url",
-        recommendedSize: "Not currently rendered on the homepage (stat/metric cards show text only).",
+        recommendedSize: "Not currently rendered (stat/metric/principle cards show text and an icon only).",
       },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
-    listColumns: ["section_id", "value", "label"],
-    sortColumn: "sort_order",
+    listColumns: ["section_id", "label", "value"],
+    // Grouped by section, then in card order — otherwise two sections' cards
+    // interleave by sort_order and the list is unreadable.
+    sortColumn: ["section_id", "sort_order"],
     allowCreate: true,
     allowDelete: true,
   },

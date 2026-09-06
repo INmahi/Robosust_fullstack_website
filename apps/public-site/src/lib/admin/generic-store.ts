@@ -20,9 +20,13 @@ async function fromTable(table: string) {
   return supabase.from(table) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
-export async function listRows(table: string, sortColumn?: string): Promise<GenericRow[]> {
+// `sortColumn` accepts several columns so a list can read grouped rather than
+// flat — page_sections sorts by page first, then sort_order within the page.
+export async function listRows(table: string, sortColumn?: string | string[]): Promise<GenericRow[]> {
   let query = (await fromTable(table)).select("*");
-  if (sortColumn) query = query.order(sortColumn, { ascending: true });
+  for (const column of sortColumn ? [sortColumn].flat() : []) {
+    query = query.order(column, { ascending: true });
+  }
   const { data, error } = await query;
   if (error) throw error;
   return data;
