@@ -42,3 +42,16 @@ export async function getProjectsByStatus(status: Project["status"]): Promise<Pr
   if (error) throw error;
   return data;
 }
+
+// Every project, newest-priority first — the /projects page's full shelf, as
+// opposed to getFlagshipProjects() which is the homepage's curated three.
+export async function getAllProjects(): Promise<Project[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}

@@ -31,3 +31,16 @@ export async function getCommitteeMembersByTier(): Promise<Record<string, Commit
     return byTier;
   }, {});
 }
+
+// Flat, ordered list for the /executive-members grid. getCommitteeMembersByTier()
+// stays for the tier-by-tier Committee page frontend-overview.md §6.5 describes.
+export async function getOrderedCommitteeMembers(): Promise<CommitteeMember[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("committee_members")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data;
+}
