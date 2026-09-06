@@ -44,3 +44,6 @@ supabase/.temp
 __pycache__/
 *.pyc
 .playwright-mcp/
+
+# graphify — regenerable local knowledge-graph cache, goes stale on every commit
+graphify-out/
