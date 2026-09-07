@@ -4,6 +4,7 @@ import { getSeoMetadataForPage } from "@/lib/content/seo-metadata";
 import { PageEffects } from "@/components/public/page-effects";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
+import { ScrollToTop } from "@/components/public/scroll-to-top";
 
 const fallbackBackground =
   "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80";
@@ -39,6 +40,7 @@ export default async function PublicLayout({ children }: { children: React.React
           {children}
         </main>
         <SiteFooter />
+        <ScrollToTop />
       </PageEffects>
     </div>
   );
