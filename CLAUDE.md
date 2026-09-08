@@ -105,8 +105,9 @@ One module per Phase 1 content type, each exporting typed CRUD plus any public-f
 
 - `login/` — public login page + `loginAction`.
 - `(protected)/layout.tsx` — the auth+role gate (`requireCmsUser()`) and shell (sidebar + main) for everything under `/admin`.
-- `(protected)/admin-nav.tsx` — client component: grouped (Site/Content/Community), icon-led sidebar nav with active-route highlighting via `usePathname()`.
-- `(protected)/page.tsx` — dashboard (icon cards linking to every content type).
+- `src/lib/admin/nav-groups.ts` — **the admin's information architecture, in one place** because both the sidebar and the dashboard render it. Grouped by the job an editor came to do (Events & projects / Team & alumni / Posts & media / Pages & navigation / Community & inbox), not by table shape — someone arrives thinking "I need to add an event", never "I need the committee_members table". Groups stay at 3–5 items; the old single "Content" group held eleven. `resolveNavGroups()` sweeps anything not placed into an **"Other"** group, so adding a content type to the registry can never make it unreachable — the previous hardcoded list silently dropped unlisted slugs. Plain module, not inside the `"use client"` nav, so the Server Component dashboard can import it (same reasoning as `nav-icons.ts`).
+- `(protected)/admin-nav.tsx` — client component: icon-led sidebar rendering `nav-groups.ts`, with active-route highlighting via `usePathname()` and a type-to-filter box (23 links is past the point where scanning beats typing).
+- `(protected)/page.tsx` — dashboard: the same `nav-groups.ts` grouping as the sidebar, with a one-line blurb per group. It's the first screen an editor lands on, so a flat grid here would undo the sidebar's organisation before they reached it.
 - `(protected)/account/` — self-service password change.
 - `(protected)/users/` — admin-only: create CMS users, reset passwords (temp password shown once via a short-lived httpOnly cookie, never in the URL), delete users.
 - `(protected)/settings/` — `site_settings` singleton edit form, grouped into Identity/Social/Contact/Footer cards (not part of the generic router).

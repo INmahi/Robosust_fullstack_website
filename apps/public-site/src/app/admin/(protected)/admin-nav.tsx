@@ -2,45 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, User, ShieldCheck, type LucideIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { LayoutDashboard, Search, Settings, ShieldCheck, User, type LucideIcon } from "lucide-react";
 import type { ContentTypeConfig } from "@/lib/admin/content-types";
 import { CONTENT_TYPE_ICONS, DEFAULT_CONTENT_TYPE_ICON } from "@/lib/admin/nav-icons";
+import { resolveNavGroups } from "@/lib/admin/nav-groups";
 
-// A flat 22-item nav is exactly the "overloaded navigation" anti-pattern the
-// design skill flags — grouped sections (not collapsible, just visually
-// separated) keep every link one click away without one undifferentiated list.
-
-const GROUPS: { label: string; slugs: string[] }[] = [
-  {
-    label: "Pages & Navigation",
-    slugs: ["navigation-items", "home-sections", "home-section-items", "seo-metadata"],
-  },
-  {
-    label: "Content",
-    slugs: [
-      "notices",
-      "achievements",
-      "projects",
-      "events",
-      "blog-posts",
-      "committee-members",
-      "committee-wings",
-      "alumni",
-      "gallery-albums",
-      "gallery-images",
-      "agp-blocks",
-    ],
-  },
-  { label: "Community", slugs: ["forum-categories", "forum-posts", "forum-replies", "contact-submissions"] },
-];
-
-function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
 
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
         active
@@ -61,30 +46,58 @@ export function AdminNav({
   contentTypes: ContentTypeConfig[];
   isAdmin: boolean;
 }) {
-  const bySlug = new Map(contentTypes.map((type) => [type.slug, type]));
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+
+  const visible = useMemo(
+    () =>
+      resolveNavGroups(contentTypes)
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((type) => !needle || type.label.toLowerCase().includes(needle)),
+        }))
+        .filter((group) => group.items.length > 0),
+    [contentTypes, needle],
+  );
 
   return (
     <nav className="flex flex-col gap-4 text-sm">
       <NavLink href="/admin" label="Dashboard" icon={LayoutDashboard} />
       <NavLink href="/admin/settings" label="Site Settings" icon={Settings} />
 
-      {GROUPS.map((group) => (
+      {/* 23 links is past the point where scanning beats typing. */}
+      <div className="relative">
+        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Find a section…"
+          aria-label="Filter admin sections"
+          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none"
+        />
+      </div>
+
+      {visible.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{group.label}</p>
-          {group.slugs.map((slug) => {
-            const type = bySlug.get(slug);
-            if (!type) return null;
-            return (
-              <NavLink
-                key={slug}
-                href={`/admin/${slug}`}
-                label={type.label}
-                icon={CONTENT_TYPE_ICONS[slug] ?? DEFAULT_CONTENT_TYPE_ICON}
-              />
-            );
-          })}
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            {group.label}
+          </p>
+          {group.items.map((type) => (
+            <NavLink
+              key={type.slug}
+              href={`/admin/${type.slug}`}
+              label={type.label}
+              icon={CONTENT_TYPE_ICONS[type.slug] ?? DEFAULT_CONTENT_TYPE_ICON}
+              onNavigate={() => setQuery("")}
+            />
+          ))}
         </div>
       ))}
+
+      {visible.length === 0 && (
+        <p className="px-3 py-2 text-sm text-slate-400">No section matches “{query}”.</p>
+      )}
 
       <div className="flex flex-col gap-1 border-t border-slate-200 pt-3">
         <NavLink href="/admin/account" label="Account" icon={User} />
