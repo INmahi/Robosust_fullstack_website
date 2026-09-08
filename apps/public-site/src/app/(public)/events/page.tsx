@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { EventsCalendarSection } from "@/components/public/events-calendar-section";
-import { EventsSection } from "@/components/public/events-section";
+import { EventsListSection } from "@/components/public/events-list-section";
 import { PageIntro } from "@/components/public/page-intro";
-import { getUpcomingEvents } from "@/lib/content/events";
+import { getEventsForListing } from "@/lib/content/events";
 import { getHomeSectionByKey } from "@/lib/content/home-sections";
 import { buildPageMetadata } from "@/lib/seo";
 
@@ -17,11 +16,9 @@ export function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function EventsPage() {
-  // One query for the whole page: the next event headlines the featured
-  // panel, everything after it fills the calendar grid.
-  const [intro, upcoming] = await Promise.all([
+  const [intro, events] = await Promise.all([
     getHomeSectionByKey("events_intro"),
-    getUpcomingEvents(12),
+    getEventsForListing(),
   ]);
 
   return (
@@ -35,10 +32,7 @@ export default async function EventsPage() {
         }
         image={intro?.background_image_url || fallbackIntroImage}
       />
-      <div id="content">
-        <EventsSection event={upcoming[0] ?? null} />
-        <EventsCalendarSection events={upcoming.slice(1)} />
-      </div>
+      <EventsListSection events={events} />
     </>
   );
 }

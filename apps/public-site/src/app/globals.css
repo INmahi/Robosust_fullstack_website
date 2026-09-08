@@ -4,6 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Hover-reveal UI needs a fallback where hover doesn't exist. Anything hidden
+   behind group-hover must pair with no-hover:* so touch users still get it. */
+@custom-variant no-hover (@media (hover: none));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
