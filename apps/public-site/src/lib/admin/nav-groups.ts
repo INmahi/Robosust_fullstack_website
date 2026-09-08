@@ -23,8 +23,8 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Team & alumni",
-    blurb: "Who is on the committee, and who used to be",
-    slugs: ["committee-wings", "committee-members", "alumni"],
+    blurb: "Who is on the committee, who used to be, and who can join",
+    slugs: ["committee-wings", "committee-members", "alumni", "recruitment"],
   },
   {
     label: "Posts & media",

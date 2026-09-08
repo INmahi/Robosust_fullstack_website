@@ -250,6 +250,22 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["committee_members"]["Insert"]>;
         Relationships: [];
       };
+      recruitment: {
+        Row: {
+          /** Singleton: always `true`, enforced by a check constraint. */
+          id: boolean;
+          status: "running" | "opening_soon" | "closed";
+          /** Application deadline while `running`. */
+          closes_on: string | null;
+          /** Start date when `opening_soon`; next possible intake when `closed`. */
+          opens_on: string | null;
+          registration_url: string | null;
+          note: string | null;
+        } & Timestamped;
+        Insert: Partial<Database["public"]["Tables"]["recruitment"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["recruitment"]["Insert"]>;
+        Relationships: [];
+      };
       committee_wings: {
         Row: {
           id: string;

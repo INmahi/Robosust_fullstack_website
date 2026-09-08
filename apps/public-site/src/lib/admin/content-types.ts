@@ -252,6 +252,40 @@ export const contentTypes: ContentTypeConfig[] = [
     allowDelete: true,
   },
   {
+    slug: "recruitment",
+    table: "recruitment",
+    label: "Recruitment",
+    fields: [
+      {
+        key: "status",
+        label: "Status (drives what the Join Us page says)",
+        kind: "select",
+        required: true,
+        options: ["running", "opening_soon", "closed"],
+      },
+      { key: "closes_on", label: "Application deadline (used when status is running)", kind: "date" },
+      // Parenthesised, not em-dashed: the list view derives column headers by
+      // stripping a trailing " (...)" hint, so this reads "Opening date" there
+      // and keeps the explanation on the form.
+      {
+        key: "opens_on",
+        label: "Opening date (next possible intake when status is closed)",
+        kind: "date",
+      },
+      {
+        key: "registration_url",
+        label: "Registration link (shown as the Apply button while running)",
+        kind: "text",
+      },
+      { key: "note", label: "Extra note (optional, shown under the status)", kind: "textarea" },
+    ],
+    listColumns: ["status", "closes_on", "opens_on"],
+    // One row, created by the migration: there is nothing to add and losing it
+    // would leave the Join Us page with no status to render.
+    allowCreate: false,
+    allowDelete: false,
+  },
+  {
     slug: "committee-wings",
     table: "committee_wings",
     label: "Committee Wings",
