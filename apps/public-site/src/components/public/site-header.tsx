@@ -10,9 +10,9 @@ export async function SiteHeader() {
   const moreItems = nav.more.map((item) => ({ id: item.id, label: item.label, url: item.url }));
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-20 h-[76px] border-b border-[#d4af37]/25 bg-[#05070c]/80 backdrop-blur-xl">
+    <header className="fixed left-0 right-0 top-0 z-20 h-[76px] border-b-2 border-[#e5c76b]/55 bg-[#05070c]/80 backdrop-blur-xl">
       <div className="container-shell flex h-full items-center justify-between gap-4 px-5 md:px-0">
-        <SiteLogo className="h-[38px] md:h-[46px]" />
+        <SiteLogo className="h-[28px] md:h-[46px]" />
 
         {/* The angled band. A trapezoid that narrows downward, matching the
             mockup's slanted edges — but tinted dark gold rather than solid

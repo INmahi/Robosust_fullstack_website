@@ -97,3 +97,22 @@ export function WhatsappIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function YoutubeIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M22.5 6.9a3 3 0 0 0-2.1-2.1C18.6 4.3 12 4.3 12 4.3s-6.6 0-8.4.5A3 3 0 0 0 1.5 6.9 31 31 0 0 0 1 12a31 31 0 0 0 .5 5.1 3 3 0 0 0 2.1 2.1c1.8.5 8.4.5 8.4.5s6.6 0 8.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 23 12a31 31 0 0 0-.5-5.1z" />
+      <path d="m9.9 15.3 5.5-3.3-5.5-3.3z" />
+    </svg>
+  );
+}

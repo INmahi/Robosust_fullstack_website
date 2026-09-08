@@ -4,6 +4,7 @@ import { ArrowUpRight, Menu, User, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { MoreItem } from "./nav-more-menu";
+import { SiteLogo } from "./site-logo";
 
 type MobileNavProps = {
   navItems: { label: string; href: string }[];
@@ -91,9 +92,7 @@ export function MobileNav({ navItems, moreItems }: MobileNavProps) {
               }`}
             >
               <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-                <span className="text-[11px] uppercase tracking-[0.22em] text-[#d4af37]">
-                  Menu
-                </span>
+                <SiteLogo className="h-[24px]" />
                 <button
                   type="button"
                   aria-label="Close menu"
