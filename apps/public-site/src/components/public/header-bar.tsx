@@ -58,8 +58,12 @@ export function HeaderBar({
           {/* The band sizes to the nav rather than a fixed width, so it keeps
               hugging the items when one is added or renamed in /admin. */}
           <div
+            // Horizontal padding has to clear the 42px lean, not just look
+            // roomy: the slanted edge cuts furthest into the box at the top on
+            // one side and the bottom on the other, so anything at or below
+            // 42px lets the first and last nav labels overhang the slant.
             className={`relative flex h-full items-center transition-[padding] duration-300 ease-out ${
-              scrolled ? "px-8" : "px-12 lg:px-16"
+              scrolled ? "px-14" : "px-12 lg:px-16"
             }`}
           >
             <div
