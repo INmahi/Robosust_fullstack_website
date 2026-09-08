@@ -10,14 +10,16 @@ export async function SiteHeader() {
   const moreItems = nav.more.map((item) => ({ id: item.id, label: item.label, url: item.url }));
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-20 h-[76px] border-b-2 border-[#e5c76b]/55 bg-[#05070c]/80 backdrop-blur-xl">
+    <header className="fixed left-0 right-0 top-0 z-20 h-[76px] border-b border-[#e5c76b]/35 bg-[#05070c]/80 backdrop-blur-xl">
       <div className="container-shell flex h-full items-center justify-between gap-4 px-5 md:px-0">
         <SiteLogo className="h-[28px] md:h-[46px]" />
 
-        {/* The angled band. A trapezoid that narrows downward, matching the
+        {/* The angled band, matching the
             mockup's slanted edges — but tinted dark gold rather than solid
             gold, so it reads as part of the header instead of a block dropped
-            on top of it. The nav sits in its own layer above the clipped one:
+            on top of it. A parallelogram, not a trapezoid: both edges lean the
+            same way, so the top edge sits to the right of the bottom by the
+            same offset. The nav sits in its own layer above the clipped one:
             clip-path on an ancestor would cut the hover underline off at the
             slanted edges. */}
         <div className="hidden h-full flex-1 items-center justify-center md:flex">
@@ -27,7 +29,7 @@ export async function SiteHeader() {
             <div
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-r from-[#2b2109] via-[#453413] to-[#2b2109]"
-              style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 42px) 100%, 42px 100%)" }}
+              style={{ clipPath: "polygon(42px 0, 100% 0, calc(100% - 42px) 100%, 0 100%)" }}
             />
             <nav className="relative flex items-center gap-7 text-[14px] text-[#cbd1dc]">
               {navItems.map(({ label, href }) => (
