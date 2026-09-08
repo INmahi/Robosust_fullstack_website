@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
+import { PublicShell } from "@/components/public/public-shell";
 import { getSiteSettings } from "@/lib/content/site-settings";
 import { getSeoMetadataForPage } from "@/lib/content/seo-metadata";
-import { PageEffects } from "@/components/public/page-effects";
-import { SiteHeader } from "@/components/public/site-header";
-import { SiteFooter } from "@/components/public/site-footer";
-import { ScrollToTop } from "@/components/public/scroll-to-top";
-
-const fallbackBackground =
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, seo] = await Promise.all([getSiteSettings(), getSeoMetadataForPage("home")]);
@@ -19,29 +13,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSiteSettings();
-  const backgroundImage = settings.background_image_url || fallbackBackground;
-
-  return (
-    <div
-      className="min-h-screen font-[family-name:var(--font-space-grotesk)] text-[#f5f7fb] antialiased"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(5,7,12,0.88), rgba(5,7,12,0.96)), url('${backgroundImage}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
-      <PageEffects>
-        <SiteHeader />
-        <main id="top" className="pt-[76px]">
-          {children}
-        </main>
-        <SiteFooter />
-        <ScrollToTop />
-      </PageEffects>
-    </div>
-  );
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
+  return <PublicShell>{children}</PublicShell>;
 }
