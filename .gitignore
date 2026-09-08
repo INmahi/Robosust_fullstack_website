@@ -51,3 +51,9 @@ graphify-out/
 # MCP server config — can hold API keys (Stitch etc.); never commit
 .mcp.json
 .claude.json
+
+# Local tooling — Claude skills and the graphify config are per-machine,
+# not part of the project. Keep the graphify pattern in .graphifyignore too:
+# that file replaces rather than merges with .gitignore (graphify#1363).
+.claude/
+.graphifyignore
