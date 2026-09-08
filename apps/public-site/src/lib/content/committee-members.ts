@@ -44,3 +44,49 @@ export async function getOrderedCommitteeMembers(): Promise<CommitteeMember[]> {
   if (error) throw error;
   return data;
 }
+
+export type CommitteeWing = Tables<"committee_wings">;
+
+/** A wing plus its members already split into the two rows the page renders:
+ * heads on top, assistants beneath. */
+export type CommitteeWingGroup = CommitteeWing & {
+  heads: CommitteeMember[];
+  assistants: CommitteeMember[];
+};
+
+const wingBase = createContentModule("committee_wings");
+
+export const listCommitteeWings = wingBase.list;
+export const createCommitteeWing = wingBase.create;
+export const updateCommitteeWing = wingBase.update;
+export const deleteCommitteeWing = wingBase.remove;
+
+// The Meet the Team page's whole read path, in two queries rather than one per
+// wing. Wings with nobody in them are dropped — an empty wing would render as a
+// divider with a blank space under it, and wings are seeded ahead of the people
+// who fill them, so this is the normal state early on, not an edge case.
+export async function getCommitteeByWings(): Promise<CommitteeWingGroup[]> {
+  const supabase = await createServerSupabase();
+
+  const [{ data: wings, error: wingsError }, { data: members, error: membersError }] = await Promise.all([
+    supabase.from("committee_wings").select("*").eq("visible", true).order("sort_order", { ascending: true }),
+    supabase
+      .from("committee_members")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+  ]);
+  if (wingsError) throw wingsError;
+  if (membersError) throw membersError;
+
+  return wings
+    .map((wing) => {
+      const inWing = members.filter((member) => member.wing_id === wing.id);
+      return {
+        ...wing,
+        heads: inWing.filter((member) => member.role_level !== "assistant"),
+        assistants: inWing.filter((member) => member.role_level === "assistant"),
+      };
+    })
+    .filter((wing) => wing.heads.length > 0 || wing.assistants.length > 0);
+}

@@ -232,7 +232,13 @@ export interface Database {
           name: string;
           designation: string;
           department_session: string | null;
+          /** Legacy free-text grouping, still used by getCommitteeMembersByTier().
+           * The Meet the Team page groups by wing_id instead. */
           tier_group: string | null;
+          /** Which committee_wings row this member belongs to. */
+          wing_id: string | null;
+          /** Rendered in the wing's head row or the assistants row beneath it. */
+          role_level: "head" | "assistant";
           email: string | null;
           linkedin_url: string | null;
           sort_order: number;
@@ -242,6 +248,18 @@ export interface Database {
           designation: string;
         };
         Update: Partial<Database["public"]["Tables"]["committee_members"]["Insert"]>;
+        Relationships: [];
+      };
+      committee_wings: {
+        Row: {
+          id: string;
+          name: string;
+          subtitle: string | null;
+          sort_order: number;
+          visible: boolean;
+        } & Timestamped;
+        Insert: Partial<Database["public"]["Tables"]["committee_wings"]["Row"]> & { name: string };
+        Update: Partial<Database["public"]["Tables"]["committee_wings"]["Insert"]>;
         Relationships: [];
       };
       alumni: {

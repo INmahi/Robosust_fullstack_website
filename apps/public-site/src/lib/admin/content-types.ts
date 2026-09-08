@@ -212,7 +212,20 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "name", label: "Name", kind: "text", required: true },
       { key: "designation", label: "Designation", kind: "text", required: true },
       { key: "department_session", label: "Department + session (e.g. EEE'21)", kind: "text" },
-      { key: "tier_group", label: "Tier group (e.g. Core EC, R&D)", kind: "text" },
+      { key: "tier_group", label: "Tier group (legacy — not used by Meet the Team)", kind: "text" },
+      {
+        key: "wing_id",
+        label: "Wing (which section of Meet the Team this member appears in)",
+        kind: "reference",
+        reference: { table: "committee_wings", labelField: "name" },
+      },
+      {
+        key: "role_level",
+        label: "Row — heads share the top row, assistants the row beneath",
+        kind: "select",
+        required: true,
+        options: ["head", "assistant"],
+      },
       {
         key: "photo_url",
         label: "Photo",
@@ -225,7 +238,24 @@ export const contentTypes: ContentTypeConfig[] = [
       { key: "linkedin_url", label: "LinkedIn URL (optional)", kind: "text" },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
-    listColumns: ["name", "designation", "tier_group"],
+    listColumns: ["name", "designation", "wing_id", "role_level"],
+    // Grouped by wing, then by the order within it — the list then reads in the
+    // same order the public page renders, which is how an editor thinks about it.
+    sortColumn: ["wing_id", "sort_order"],
+    allowCreate: true,
+    allowDelete: true,
+  },
+  {
+    slug: "committee-wings",
+    table: "committee_wings",
+    label: "Committee Wings",
+    fields: [
+      { key: "name", label: "Wing name (shown on the divider)", kind: "text", required: true },
+      { key: "subtitle", label: "Subtitle (one line under the wing name)", kind: "text" },
+      { key: "visible", label: "Visible", kind: "boolean" },
+      { key: "sort_order", label: "Sort order (the order wings scroll past)", kind: "number" },
+    ],
+    listColumns: ["name", "subtitle", "visible"],
     sortColumn: "sort_order",
     allowCreate: true,
     allowDelete: true,

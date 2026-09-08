@@ -24,6 +24,7 @@ const GROUPS: { label: string; slugs: string[] }[] = [
       "events",
       "blog-posts",
       "committee-members",
+      "committee-wings",
       "alumni",
       "gallery-albums",
       "gallery-images",
