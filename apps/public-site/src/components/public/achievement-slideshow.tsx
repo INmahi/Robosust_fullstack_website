@@ -41,7 +41,9 @@ function usePrefersReducedMotion() {
 export function AchievementSlideshow({
   slides,
   autoPlay = true,
-  interval = 6000,
+  // 10s per slide. Upstream's 6s is too quick to finish reading an
+  // achievement's description before the panel swaps underneath you.
+  interval = 10000,
 }: AchievementSlideshowProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
