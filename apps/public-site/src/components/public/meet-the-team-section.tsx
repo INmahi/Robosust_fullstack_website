@@ -17,7 +17,7 @@ export async function MeetTheTeamSection() {
       <ScrollSnapScope />
 
       {/* Step 1 — leadership at full size, alone on screen. */}
-      <section className="flex min-h-dvh snap-start flex-col justify-center py-16">
+      <section className="snap-section flex min-h-dvh flex-col justify-center py-16">
         <div className="container-shell">
           <WingDivider name={leadership.name} subtitle={leadership.subtitle} />
           <WingRows wing={leadership} headSize="lg" assistantSize="md" />
@@ -31,7 +31,7 @@ export async function MeetTheTeamSection() {
           scrolling intact — the reader still sees them shrink and move up,
           because that is what the two snap positions look like in sequence. */}
       {vicePresidents && (
-        <section className="flex min-h-dvh snap-start flex-col justify-center py-16">
+        <section className="snap-section flex min-h-dvh flex-col justify-center py-16">
           <div className="container-shell">
             <div className="reveal mb-16 text-center text-[10px] uppercase tracking-[0.22em] text-[#98a1b3]">
               {leadership.name}

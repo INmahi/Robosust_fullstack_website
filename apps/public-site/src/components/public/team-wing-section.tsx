@@ -44,8 +44,12 @@ export function WingRows({
     <div className="flex flex-col gap-8">
       {wing.heads.length > 0 && (
         <div className="flex flex-wrap justify-center gap-6">
-          {wing.heads.map((member) => (
-            <div key={member.id} className={`reveal ${headBasis} ${headCap}`}>
+          {wing.heads.map((member, index) => (
+            <div
+              key={member.id}
+              className={`reveal reveal-card ${headBasis} ${headCap}`}
+              style={{ "--reveal-delay": `${index * 90}ms` } as React.CSSProperties}
+            >
               <TeamMemberCard member={member} size={headSize} />
             </div>
           ))}
@@ -54,8 +58,14 @@ export function WingRows({
 
       {wing.assistants.length > 0 && (
         <div className="flex flex-wrap justify-center gap-5">
-          {wing.assistants.map((member) => (
-            <div key={member.id} className={`reveal ${assistantBasis} max-w-[300px]`}>
+          {wing.assistants.map((member, index) => (
+            <div
+              key={member.id}
+              // Assistants start after the heads have landed, so a wing reads
+              // top-down rather than everything arriving at once.
+              className={`reveal reveal-card ${assistantBasis} max-w-[300px]`}
+              style={{ "--reveal-delay": `${180 + index * 80}ms` } as React.CSSProperties}
+            >
               <TeamMemberCard member={member} size={assistantSize} />
             </div>
           ))}
@@ -67,7 +77,7 @@ export function WingRows({
 
 export function TeamWingSection({ wing }: { wing: CommitteeWingGroup }) {
   return (
-    <section className="flex min-h-dvh snap-start flex-col justify-center py-16">
+    <section className="snap-section flex min-h-dvh flex-col justify-center py-16">
       <div className="container-shell">
         <WingDivider name={wing.name} subtitle={wing.subtitle} />
         <WingRows wing={wing} />

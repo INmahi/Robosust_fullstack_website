@@ -154,7 +154,38 @@
    section's heading isn't hidden underneath it. */
 html.snap-page {
   scroll-snap-type: y proximity;
-  scroll-padding-top: 76px;
+}
+
+/* Snap alignment is corrected on the targets with scroll-margin-top, not with
+   scroll-padding-top on the scrollport: the latter was ignored here and every
+   wing snapped with its heading behind the 76px fixed header. */
+.snap-page .snap-section {
+  scroll-margin-top: 76px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* The site-wide .reveal is a 20px fade — too quiet to read as the wing
+   "arriving". Team cards travel further, scale up, and stagger. */
+.reveal.reveal-card {
+  opacity: 0;
+  transform: translateY(44px) scale(0.94);
+  transition:
+    opacity 0.55s ease,
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.reveal-card.show {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal.reveal-card {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
