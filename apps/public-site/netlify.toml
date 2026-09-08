@@ -1,0 +1,36 @@
+# Netlify config for the public site.
+#
+# This lives in the package directory, not the repo root, which is Netlify's
+# recommended shape for a monorepo: set the site's **package directory** to
+# apps/public-site in the Netlify UI and leave the **base directory unset**.
+# Dependency installation then runs from the repo root, which is the only place
+# npm workspaces can resolve `@robosust/supabase": "*"` from — installing inside
+# apps/public-site alone would fail on that workspace dependency.
+#
+# The build command is the root turbo script for the same reason: it builds the
+# workspace package first, then the app that transpiles it (see
+# next.config.ts's transpilePackages).
+#
+# Next.js itself needs no plugin configuration — Netlify detects it and applies
+# its Next runtime automatically, and has supported v16 since release.
+
+[build]
+  command = "npm run build"
+  publish = "apps/public-site/.next"
+
+[build.environment]
+  # Match the repo's own floor (root package.json engines.node >= 20). Pinned
+  # rather than left to Netlify's default so a change in their default image
+  # can't silently move the runtime under us.
+  NODE_VERSION = "20"
+
+# Required at runtime by src/lib/content/* and src/lib/storage/*. Values are NOT
+# here — they are secrets and belong in Netlify's environment variables:
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+#   SUPABASE_SECRET_KEY          <- service role, bypasses RLS
+#   R2_ACCOUNT_ID
+#   R2_ACCESS_KEY_ID
+#   R2_SECRET_ACCESS_KEY
+#   R2_BUCKET_NAME
+#   R2_PUBLIC_URL
