@@ -1,27 +1,64 @@
 import { getRecentAchievements } from "@/lib/content/achievements";
-import { getHomeSectionByKey, listHomeSectionItems } from "@/lib/content/home-sections";
+import { getHomeSectionByKey } from "@/lib/content/home-sections";
+import { AchievementSlideshow, type AchievementSlide } from "./achievement-slideshow";
 import { SectionHeading } from "./section-heading";
 
 const defaultSectionBackground =
   "https://images.unsplash.com/photo-1564053489984-317bbd7f4a8f?auto=format&fit=crop&w=1800&q=80";
-const defaultMilestoneImage =
-  "https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?auto=format&fit=crop&w=1600&q=85";
-const defaultMetrics = [
+
+// The reference frontend's own three slides, used only while the achievements
+// table is empty — a singleton-backed section falls back to reference copy
+// rather than rendering a hollow shell (see CLAUDE.md's empty-state rule).
+// Real rows take over the moment an editor adds one in /admin.
+const fallbackSlides: AchievementSlide[] = [
   {
-    id: "projects",
-    value: "12+",
-    body: "Competition and research projects across autonomous robotics, embedded systems and intelligent machines.",
+    id: "fallback-podium",
+    image: "https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?auto=format&fit=crop&w=1600&q=85",
+    imageAlt: "Students presenting a robotics project at a competition",
+    label: "Featured milestone",
+    title: "From prototype to podium.",
+    description:
+      "At RoboSUST, every competition result begins with disciplined experimentation. Our teams move from sketches and simulations to tested mechanisms, refining each subsystem until the whole robot performs with confidence.",
   },
-  { id: "builder", value: "24/7", body: "A builder mindset: test, break, learn, iterate and ship." },
+  {
+    id: "fallback-research",
+    image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1600&q=85",
+    imageAlt: "Robot prototype being tested in a research workspace",
+    label: "Research in motion",
+    title: "Intelligence in the field.",
+    description:
+      "Robotics research matters when it leaves the workbench and meets a real environment. Our navigation systems combine sensing, mapping, planning and control to help machines respond intelligently to uncertainty.",
+  },
+  {
+    id: "fallback-people",
+    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=1600&q=85",
+    imageAlt: "Engineering team collaborating around a robotic machine",
+    label: "People behind progress",
+    title: "Built by shared momentum.",
+    description:
+      "Strong teams turn difficult problems into shared momentum. Across design reviews, late-night builds and demanding trials, members learn to communicate clearly, challenge assumptions and trust careful measurement.",
+  },
 ];
 
 export async function AchievementsSection() {
-  const [section, [milestone]] = await Promise.all([
+  const [section, achievements] = await Promise.all([
     getHomeSectionByKey("achievements"),
-    getRecentAchievements(1),
+    getRecentAchievements(6),
   ]);
-  const items = section ? await listHomeSectionItems(section.id) : [];
-  const metrics = items.length > 0 ? items : defaultMetrics;
+
+  const slides: AchievementSlide[] =
+    achievements.length > 0
+      ? achievements.map((achievement) => ({
+          id: achievement.id,
+          image: achievement.image_url || fallbackSlides[0].image,
+          imageAlt: achievement.title,
+          // The small kicker above the title: the competition it came from
+          // reads best, with the year as a second choice.
+          label: achievement.competition || (achievement.year ? String(achievement.year) : "Featured milestone"),
+          title: achievement.title,
+          description: achievement.description || "",
+        }))
+      : fallbackSlides;
 
   return (
     <section
@@ -39,34 +76,7 @@ export async function AchievementsSection() {
           title={section?.heading || "Proof of progress."}
           description={section?.subheading}
         />
-        <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-          <article
-            className="reveal flex min-h-[390px] flex-col justify-end rounded-[22px] border border-white/10 bg-cover bg-center p-[36px]"
-            style={{
-              backgroundImage: `linear-gradient(0deg,#090c13 5%,rgba(9,12,19,.15)), url('${milestone?.image_url || defaultMilestoneImage}')`,
-            }}
-          >
-            <div className="text-[10px] uppercase tracking-[0.14em] text-[#7f899b]">Featured milestone</div>
-            <h3 className="mt-3 text-[42px] font-semibold leading-[1]">
-              {milestone?.title || "From prototype to podium."}
-            </h3>
-            <p className="mt-4 max-w-[440px] text-[14px] leading-7 text-[#98a1b3]">
-              {milestone?.description ||
-                "Replace this with the laboratory's latest major competition result or research milestone."}
-            </p>
-          </article>
-          <div className="grid gap-4">
-            {metrics.map((metric) => (
-              <div
-                key={metric.id}
-                className="reveal rounded-[22px] border border-white/10 bg-[#0d111a] p-[26px]"
-              >
-                <div className="text-[46px] font-bold tracking-[-0.05em]">{metric.value}</div>
-                <p className="mt-3 text-[13px] leading-6 text-[#98a1b3]">{metric.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AchievementSlideshow slides={slides} />
       </div>
     </section>
   );
