@@ -42,6 +42,12 @@ export type ContentTypeConfig = {
   listColumns: string[]; // subset of field keys shown in the table view
   /** One column, or several applied in order (e.g. ["page", "sort_order"]). */
   sortColumn?: string | string[];
+  /** Field key to bucket the list view by. Each distinct value becomes a
+   * collapsible group instead of every row landing in one long table. The
+   * column is dropped from the table inside a group, where it would only
+   * repeat the group heading. Rows must already be sorted by this field (see
+   * sortColumn) for the groups to come out in a sensible order. */
+  groupBy?: string;
   allowCreate: boolean;
   allowDelete: boolean;
 };
@@ -426,6 +432,10 @@ export const contentTypes: ContentTypeConfig[] = [
     ],
     listColumns: ["page", "section_key", "heading", "visible"],
     sortColumn: ["page", "sort_order"],
+    // One collapsed row per page rather than every section of every page in a
+    // single table: an editor changing the About page shouldn't have to read
+    // past four other pages' sections to find it.
+    groupBy: "page",
     allowCreate: true,
     allowDelete: true,
   },
