@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, useTransition, type ChangeEvent } from "react";
+import { useId, useState, useTransition, type ChangeEvent } from "react";
 import { UploadCloud } from "lucide-react";
 import { uploadImageAction } from "@/lib/storage/actions";
 import { inputClass, labelClass } from "@/lib/admin/ui-classes";
@@ -10,16 +10,14 @@ import { inputClass, labelClass } from "@/lib/admin/ui-classes";
 // downstream (src/lib/content/*, public pages) needs to know which was used.
 // Shared by the generic content form and the site-settings singleton form.
 //
-// Structure note — the upload control has broken twice, so don't "simplify"
-// it back. Originally the whole field was one <label> with the file input's
-// own <label> nested inside it: nested labels are invalid HTML, and the outer
-// one owns the first control inside it (the text input), so a click on
-// "Upload a file" could be claimed by the outer label and never reach the
-// file input. Un-nesting them wasn't enough on its own either, so the trigger
-// is now a plain <button> that calls .click() on the input through a ref —
-// that depends on neither label association nor the browser's label
-// activation behaviour. Chromium tolerated both broken versions, which is why
-// this kept looking fine locally while being dead in the field.
+// Structure note — the upload control has broken before, so don't "simplify"
+// it back. The whole field used to be one <label> with the file input's own
+// <label> nested inside it. Nested labels are invalid HTML, and the outer one
+// owns the first control inside it (the text input), so a click on "Upload a
+// file" could be claimed by the outer label and never reach the file input.
+// It is now a <div> of sibling labels, each bound to its own control by
+// htmlFor. Chromium tolerated the broken version, which is why it kept
+// looking fine locally while being dead in the field.
 export function ImageUrlField({
   name,
   label,
@@ -37,7 +35,6 @@ export function ImageUrlField({
 }) {
   const fieldId = useId();
   const fileId = `${fieldId}-file`;
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(defaultValue ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -89,25 +86,22 @@ export function ImageUrlField({
             placeholder="https://... or upload a file below"
             className={inputClass}
           />
-          {/* A real <button> that clicks the input itself, rather than a
-              <label htmlFor>. Label activation is the part that has already
-              failed here once, and it depends on correct association plus the
-              browser's label-activation behaviour; calling .click() on the
-              input directly depends on neither. type="button" so it can't
-              submit the form it sits in. */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isPending}
+          {/* Deliberately a <label htmlFor>, not a <button onClick>. A label
+              opens the picker natively — it works even if React hasn't
+              hydrated, if a chunk failed to load, or if the dev server served
+              a stale bundle. A button's onClick works in none of those cases.
+              Styled to look like a button so it's actually findable; the
+              original was 16px of grey text that read as a caption. */}
+          <label
+            htmlFor={fileId}
             className={`inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-blue-400 hover:text-blue-600 ${
               isPending ? "cursor-wait opacity-70" : ""
             }`}
           >
             <UploadCloud size={15} />
             {isPending ? "Uploading…" : "Upload a file"}
-          </button>
+          </label>
           <input
-            ref={fileInputRef}
             id={fileId}
             type="file"
             // HEIC/HEIF are what phone cameras produce and the server rejects
