@@ -152,8 +152,13 @@
    `proximity`, not `mandatory`: a wing taller than the viewport must not trap
    the reader. scroll-padding clears the 76px fixed header so a snapped
    section's heading isn't hidden underneath it. */
+/* mandatory, not proximity: one gesture must land on exactly one wing. This is
+   safe for a wing taller than the viewport — the spec makes every position in
+   which an oversized snap area covers the snapport a valid snap position, so
+   the reader can still scroll through it rather than being trapped. Card sizes
+   below are nevertheless budgeted so a wing fits a normal viewport. */
 html.snap-page {
-  scroll-snap-type: y proximity;
+  scroll-snap-type: y mandatory;
 }
 
 /* Snap alignment is corrected on the targets with scroll-margin-top, not with

@@ -9,23 +9,23 @@ export type CardSize = "lg" | "md" | "sm";
 // below stands in, which is exactly what the reference design shows.
 const sizes: Record<CardSize, { card: string; lift: string; image: string; name: string; role: string }> = {
   lg: {
-    card: "min-h-[290px] pt-[96px] px-7 pb-7 rounded-[20px]",
-    lift: "-top-[76px] h-[168px]",
-    image: "h-[168px]",
+    card: "min-h-[270px] pt-[88px] px-7 pb-6 rounded-[20px]",
+    lift: "-top-[70px] h-[152px]",
+    image: "h-[152px]",
     name: "text-[20px]",
     role: "text-[10px]",
   },
   md: {
-    card: "min-h-[250px] pt-[84px] px-6 pb-6 rounded-[18px]",
-    lift: "-top-[62px] h-[140px]",
-    image: "h-[140px]",
+    card: "min-h-[230px] pt-[76px] px-6 pb-5 rounded-[18px]",
+    lift: "-top-[56px] h-[126px]",
+    image: "h-[126px]",
     name: "text-[17px]",
     role: "text-[9px]",
   },
   sm: {
-    card: "min-h-[190px] pt-[64px] px-5 pb-5 rounded-[16px]",
-    lift: "-top-[50px] h-[112px]",
-    image: "h-[112px]",
+    card: "min-h-[170px] pt-[58px] px-5 pb-4 rounded-[16px]",
+    lift: "-top-[44px] h-[100px]",
+    image: "h-[100px]",
     name: "text-[15px]",
     role: "text-[9px]",
   },

@@ -5,7 +5,7 @@ import { TeamMemberCard, type CardSize } from "./team-member-card";
 // side of the name.
 export function WingDivider({ name, subtitle }: { name: string; subtitle?: string | null }) {
   return (
-    <div className="reveal mb-20 text-center">
+    <div className="reveal mb-16 text-center">
       <div className="flex items-center justify-center gap-4">
         <span className="hidden h-px flex-1 bg-gradient-to-r from-transparent to-[#d4af37]/35 sm:block" />
         <span className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#d4af37] sm:text-[15px]">
@@ -41,7 +41,7 @@ export function WingRows({
   const headCap = headSize === "lg" ? "max-w-[340px]" : "max-w-[300px]";
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       {wing.heads.length > 0 && (
         <div className="flex flex-wrap justify-center gap-6">
           {wing.heads.map((member, index) => (
@@ -57,7 +57,7 @@ export function WingRows({
       )}
 
       {wing.assistants.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-5">
+        <div className="flex flex-wrap justify-center gap-4">
           {wing.assistants.map((member, index) => (
             <div
               key={member.id}
@@ -77,7 +77,7 @@ export function WingRows({
 
 export function TeamWingSection({ wing }: { wing: CommitteeWingGroup }) {
   return (
-    <section className="snap-section flex min-h-dvh flex-col justify-center py-16">
+    <section className="snap-section flex min-h-dvh flex-col justify-center py-10">
       <div className="container-shell">
         <WingDivider name={wing.name} subtitle={wing.subtitle} />
         <WingRows wing={wing} />
