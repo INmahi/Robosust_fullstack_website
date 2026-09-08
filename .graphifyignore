@@ -63,3 +63,7 @@ __pycache__/
 .playwright-mcp/
 
 graphify-out/
+
+# MCP server config — can hold API keys (Stitch etc.); never commit
+.mcp.json
+.claude.json
