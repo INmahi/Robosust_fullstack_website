@@ -7,11 +7,11 @@ export function WingDivider({ name, subtitle }: { name: string; subtitle?: strin
   return (
     <div className="reveal mb-20 text-center">
       <div className="flex items-center justify-center gap-4">
-        <span className="hidden h-px flex-1 bg-gradient-to-r from-transparent to-[#ff3b46]/35 sm:block" />
-        <span className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#ff3b46] sm:text-[15px]">
+        <span className="hidden h-px flex-1 bg-gradient-to-r from-transparent to-[#d4af37]/35 sm:block" />
+        <span className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#d4af37] sm:text-[15px]">
           {name}
         </span>
-        <span className="hidden h-px flex-1 bg-gradient-to-l from-transparent to-[#ff3b46]/35 sm:block" />
+        <span className="hidden h-px flex-1 bg-gradient-to-l from-transparent to-[#d4af37]/35 sm:block" />
       </div>
       {subtitle && <p className="mx-auto mt-3 max-w-[520px] text-[13px] text-[#98a1b3]">{subtitle}</p>}
     </div>

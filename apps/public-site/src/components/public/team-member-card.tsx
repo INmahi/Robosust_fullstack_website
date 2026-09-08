@@ -34,16 +34,16 @@ const sizes: Record<CardSize, { card: string; lift: string; image: string; name:
 function Silhouette({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 120 140" fill="none" className={className} aria-hidden="true">
-      <circle cx="60" cy="40" r="24" stroke="#ff3b46" strokeWidth="1.5" strokeDasharray="5 4" />
-      <circle cx="60" cy="40" r="16" fill="#ff3b46" fillOpacity="0.16" />
+      <circle cx="60" cy="40" r="24" stroke="#d4af37" strokeWidth="1.5" strokeDasharray="5 4" />
+      <circle cx="60" cy="40" r="16" fill="#d4af37" fillOpacity="0.16" />
       <path
         d="M26 138c0-22 15-38 34-38s34 16 34 38"
-        stroke="#ff3b46"
+        stroke="#d4af37"
         strokeWidth="1.5"
-        fill="#ff3b46"
+        fill="#d4af37"
         fillOpacity="0.08"
       />
-      <path d="M60 104v20M46 118h28" stroke="#ff3b46" strokeWidth="1" strokeOpacity="0.55" />
+      <path d="M60 104v20M46 118h28" stroke="#d4af37" strokeWidth="1" strokeOpacity="0.55" />
     </svg>
   );
 }
@@ -53,13 +53,13 @@ export function TeamMemberCard({ member, size = "md" }: { member: CommitteeMembe
 
   return (
     <article
-      className={`group relative flex w-full flex-col border border-white/10 bg-[#0d111a]/80 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-[#ff3b46]/45 ${s.card}`}
+      className={`group relative flex w-full flex-col border border-white/10 bg-[#0d111a]/80 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-[#d4af37]/45 ${s.card}`}
     >
       {/* Vertical role plate on the left edge, straddling the border — the
           reference's most distinctive card detail. Hidden below sm, where
           there isn't width to spare for it. */}
       <div
-        className={`absolute -left-[11px] top-1/2 hidden -translate-y-1/2 rounded-md border border-[#ff3b46]/40 bg-[#05070c] px-1.5 py-3 font-semibold uppercase tracking-[0.18em] text-[#ff3b46] sm:block ${s.role}`}
+        className={`absolute -left-[11px] top-1/2 hidden -translate-y-1/2 rounded-md border border-[#d4af37]/40 bg-[#05070c] px-1.5 py-3 font-semibold uppercase tracking-[0.18em] text-[#d4af37] sm:block ${s.role}`}
         style={{ writingMode: "vertical-rl", transform: "translateY(-50%) rotate(180deg)" }}
       >
         {member.designation}
@@ -78,11 +78,11 @@ export function TeamMemberCard({ member, size = "md" }: { member: CommitteeMembe
       </div>
 
       <div className="mt-auto flex items-start gap-3">
-        <span className="mt-1 h-6 w-[3px] shrink-0 bg-[#ff3b46]" />
+        <span className="mt-1 h-6 w-[3px] shrink-0 bg-[#d4af37]" />
         <div className="min-w-0">
           <h3 className={`font-semibold leading-tight text-white ${s.name}`}>{member.name}</h3>
           {member.department_session && (
-            <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#d4af37]">
+            <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[#98a1b3]">
               {member.department_session}
             </p>
           )}
