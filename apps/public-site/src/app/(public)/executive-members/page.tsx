@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ExecutiveMembersSection } from "@/components/public/executive-members-section";
+import { MeetTheTeamSection } from "@/components/public/meet-the-team-section";
 import { PageIntro } from "@/components/public/page-intro";
 import { getHomeSectionByKey } from "@/lib/content/home-sections";
 import { buildPageMetadata } from "@/lib/seo";
@@ -9,7 +9,7 @@ const fallbackIntroImage =
 
 export function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata("executive-members", {
-    title: "Executive Members",
+    title: "Meet the Team",
     description: "The executive committee guiding RoboSUST's projects, programs and community.",
   });
 }
@@ -28,7 +28,7 @@ export default async function ExecutiveMembersPage() {
         }
         image={intro?.background_image_url || fallbackIntroImage}
       />
-      <ExecutiveMembersSection />
+      <MeetTheTeamSection />
     </>
   );
 }

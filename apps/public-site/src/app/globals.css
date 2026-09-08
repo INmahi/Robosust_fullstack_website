@@ -148,6 +148,21 @@
 
 /* Public-site design system, ported from synapse6/robosust_frontend.
    Scoped to (public) route components only — admin never uses these. */
+/* Applied to <html> only while a snap page is mounted (see ScrollSnapScope).
+   `proximity`, not `mandatory`: a wing taller than the viewport must not trap
+   the reader. scroll-padding clears the 76px fixed header so a snapped
+   section's heading isn't hidden underneath it. */
+html.snap-page {
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 76px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.snap-page {
+    scroll-snap-type: none;
+  }
+}
+
 @layer utilities {
   .container-shell {
     width: min(1240px, calc(100% - 40px));
