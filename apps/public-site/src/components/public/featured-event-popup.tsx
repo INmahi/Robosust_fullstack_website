@@ -57,7 +57,7 @@ export function FeaturedEventPopup({
       role="complementary"
       aria-label="Featured event"
       aria-hidden={!visible}
-      className={`fixed bottom-6 left-6 z-20 w-[min(360px,calc(100vw-3rem))] overflow-hidden rounded-[20px] border border-white/15 bg-[#0d111a]/95 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-500 ease-out motion-reduce:transition-opacity ${
+      className={`fixed bottom-[84px] right-6 z-20 w-[min(360px,calc(100vw-3rem))] md:bottom-[96px] md:right-8 overflow-hidden rounded-[20px] border border-white/15 bg-[#0d111a]/95 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-500 ease-out motion-reduce:transition-opacity ${
         visible
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-6 opacity-0 motion-reduce:translate-y-0"

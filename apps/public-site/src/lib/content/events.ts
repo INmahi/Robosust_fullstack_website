@@ -52,8 +52,12 @@ export async function getFeaturedEvents(limit = 3): Promise<Event[]> {
     .from("events")
     .select("*")
     .eq("event_type", "featured")
-    .gte("event_date", new Date().toISOString())
-    .order("event_date", { ascending: true })
+    // Undated featured events count. `gte` on a null date excludes the row
+    // outright, so a freshly created event whose date isn't set yet would be
+    // tagged featured in /admin and silently never appear — which is exactly
+    // how this first shipped broken.
+    .or(`event_date.gte.${new Date().toISOString()},event_date.is.null`)
+    .order("event_date", { ascending: true, nullsFirst: false })
     .limit(limit);
   if (error) throw error;
   return data;
