@@ -6,12 +6,13 @@ import { MobileNav } from "./mobile-nav";
 import { NavMoreMenu, type MoreItem } from "./nav-more-menu";
 import { SiteLogo } from "./site-logo";
 
-// At rest the band is a parallelogram; once the page is scrolled it squares off
-// into a plain rectangle. Both are four-point polygons with corners listed in
-// the same order, which is what lets clip-path interpolate between them — swap
-// the winding or the point count and the transition snaps instead of animating.
+// The band is a parallelogram in both states, leaning one way at rest and the
+// mirror of that once scrolled — same 42px offset, opposite sides. Corners are
+// listed in the same order (TL, TR, BR, BL) in both, and both have four points,
+// which is what lets clip-path interpolate between them: change the point count
+// or the winding and the transition snaps instead of animating.
 const BAND_AT_REST = "polygon(42px 0, 100% 0, calc(100% - 42px) 100%, 0 100%)";
-const BAND_SCROLLED = "polygon(0 0, 100% 0, 100% 100%, 0 100%)";
+const BAND_SCROLLED = "polygon(0 0, calc(100% - 42px) 0, 100% 100%, 42px 100%)";
 
 // useSyncExternalStore rather than an effect + setState: it gives the right
 // answer on the very first render when the page loads already scrolled (a
