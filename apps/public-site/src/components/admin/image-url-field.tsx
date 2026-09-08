@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ChangeEvent } from "react";
+import { useId, useState, useTransition, type ChangeEvent } from "react";
 import { UploadCloud } from "lucide-react";
 import { uploadImageAction } from "@/lib/storage/actions";
 import { inputClass, labelClass } from "@/lib/admin/ui-classes";
@@ -9,6 +9,15 @@ import { inputClass, labelClass } from "@/lib/admin/ui-classes";
 // via Cloudflare R2 — the two paths write to the same field, so nothing
 // downstream (src/lib/content/*, public pages) needs to know which was used.
 // Shared by the generic content form and the site-settings singleton form.
+//
+// Structure note: this is a <div> of sibling <label>s, each bound to its
+// control by htmlFor. It used to be one outer <label> wrapping everything
+// with the file input's <label> nested inside it. Nested labels are invalid
+// HTML and the click behaviour is browser-dependent — the outer label owns
+// the first control inside it (the text input), so a click on "Upload a
+// file" could be claimed by the outer label and never reach the file input,
+// which is exactly the "clicking does nothing" report this fixes. Chromium
+// tolerated it, which is why it looked fine locally.
 export function ImageUrlField({
   name,
   label,
@@ -24,6 +33,8 @@ export function ImageUrlField({
    * upload happens, since that's the one place someone can't miss it. */
   hint?: string;
 }) {
+  const fieldId = useId();
+  const fileId = `${fieldId}-file`;
   const [value, setValue] = useState(defaultValue ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -50,8 +61,8 @@ export function ImageUrlField({
   }
 
   return (
-    <label className={labelClass}>
-      {label}
+    <div className={labelClass}>
+      <label htmlFor={fieldId}>{label}</label>
       {hint && <span className="text-xs font-normal text-slate-400">{hint}</span>}
       <div className="flex gap-3">
         {value && (
@@ -66,6 +77,7 @@ export function ImageUrlField({
         )}
         <div className="flex flex-1 flex-col gap-2">
           <input
+            id={fieldId}
             name={name}
             type="text"
             required={required}
@@ -74,17 +86,27 @@ export function ImageUrlField({
             placeholder="https://... or upload a file below"
             className={inputClass}
           />
-          <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-blue-600">
-            <UploadCloud size={14} />
+          {/* A real button-sized target, not 16px of grey text — this is the
+              control an editor is actually looking for. */}
+          <label
+            htmlFor={fileId}
+            className={`inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-blue-400 hover:text-blue-600 ${
+              isPending ? "cursor-wait opacity-70" : ""
+            }`}
+          >
+            <UploadCloud size={15} />
             {isPending ? "Uploading…" : "Upload a file"}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={isPending}
-              className="sr-only"
-            />
           </label>
+          <input
+            id={fileId}
+            type="file"
+            // HEIC/HEIF are what phone cameras produce and the server rejects
+            // them, so don't offer them in the picker in the first place.
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+            onChange={handleFileChange}
+            disabled={isPending}
+            className="sr-only"
+          />
         </div>
       </div>
       {error && (
@@ -92,6 +114,6 @@ export function ImageUrlField({
           {error}
         </span>
       )}
-    </label>
+    </div>
   );
 }
