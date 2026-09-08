@@ -97,7 +97,7 @@ One module per Phase 1 content type, each exporting typed CRUD plus any public-f
 
 ### `src/components/admin`
 
-- `image-url-field.tsx` — text input (paste a URL) + file upload (via R2) writing to the same field. Shared by the generic content form and the settings page. **It is a `<div>` of sibling `<label>`s bound by `htmlFor`, and must stay that way**: it used to be one outer `<label>` wrapping the file input's own nested `<label>`. Nested labels are invalid HTML and the outer one owns the first control inside it (the text input), so a click on "Upload a file" could be claimed by the outer label and never reach the file input — reported live as "the upload button does nothing", and invisible in Chromium, which tolerates it.
+- `image-url-field.tsx` — text input (paste a URL) + file upload (via R2) writing to the same field. Shared by the generic content form and the settings page. **Two structural rules, both the result of a live bug — see "Open bug: the image upload control" below before changing either.** (1) It is a `<div>` of sibling `<label>`s bound by `htmlFor`; it must never go back to one outer `<label>` wrapping the file input's own nested `<label>`. (2) The upload trigger is a `<label htmlFor>`, deliberately **not** a `<button onClick>` — a label opens the picker natively even if React never hydrates or a chunk fails to load, which a button cannot.
 
 ### `src/app/admin` — the CMS UI
 
@@ -136,6 +136,27 @@ Each of the four uses `buildPageMetadata()` against its own `seo_metadata` row. 
 - `src/components/public/section-icons.ts` — `home_section_items.icon` holds a plain lowercase name an editor picks from a dropdown, so the CMS never references a component. Unknown/blank falls back to a default glyph. **Keep `SECTION_ICONS` and the field's `options` in `lib/admin/content-types.ts` in sync** — the registry imports `SECTION_ICON_NAMES` from here so they can't drift.
 - `src/components/public/event-format.ts` — `formatEventCategory`/`formatEventDate`, shared by the featured-event panel and the /events calendar grid so a slug and a date read identically in both.
 - `src/components/public/site-header.tsx`, `site-footer.tsx`, `hero-section.tsx`, `about-section.tsx`, `events-section.tsx`, `projects-section.tsx`, `project-card.tsx`, `achievements-section.tsx`, `blog-section.tsx`, `about-principles-section.tsx`, `events-calendar-section.tsx`, `projects-shelf-section.tsx`, `projects-cta-section.tsx`, `executive-members-section.tsx` — async Server Components, each fetching its own data through `src/lib/content/*` (see IMPLEMENTATION_PLAN.md §4 Step 7+8 for the exact field mapping). Sections backed by a specific row set (events/projects/blog) return `null` when empty rather than rendering a hollow shell; sections backed by a singleton (hero/about/achievements headings) fall back to the reference's original copy instead.
+
+## Open bug: the image upload control (unresolved as of 2026-09-08)
+
+**Symptom, as reported:** on `/admin/events/new`, clicking "Upload a file" produces **no file picker at all** — "I do not get any file selection options at all." Reporter is on a real browser (not VS Code's Simple Browser), and says it worked previously. Corroborated by data: their real event row had `image_url = null`, so no upload of theirs has ever landed.
+
+**Not reproducible here.** Driven through Playwright/Chromium at every stage: the picker opens, the file reaches R2, and the URL fills the field. That held for all three markup versions below, so Chromium is not exercising whatever fails for them. **The server side is proven good** — `uploadImageAction` + `uploadToR2` were verified end-to-end repeatedly, returning real `pub-….r2.dev` URLs.
+
+**Already tried, and what it means:**
+| Attempt | Result |
+|---|---|
+| Un-nested the labels (`b23bbf8`) — the outer `<label>` owned the text input, so the click could never reach the file input | Real defect, genuinely fixed. **Did not fix the report.** |
+| Swapped the trigger to `<button onClick>` + ref (`529ea54`) | **Reverted (`794ab4f`)** — a button needs hydration, a label doesn't, so this was strictly more fragile against the likeliest cause |
+| Deleted `.next` and cold-restarted the dev server | Done; a stale Turbopack bundle is still the leading theory |
+| The `must_change_password` banner blocking something | Ruled out — it renders a notice and gates nothing |
+| VS Code Simple Browser (webviews block file dialogs) | Ruled out by the reporter |
+
+**Where to pick this up.** Nothing further should be changed in the markup until someone reproduces it — three markup rewrites have already failed to. Get these four facts first:
+1. **Does the trigger render as a bordered button with an upload-cloud icon, or as small grey text?** Grey text means they are on stale cached markup and never loaded the fix — that would be the whole bug. Hard-refresh (Ctrl+Shift+R) before anything else.
+2. **DevTools console output at the moment of the click**, plus the Network tab — a failed JS chunk would explain it, and would also break the thumbnail preview and the "Uploading…" state.
+3. **Incognito with extensions disabled** — some privacy extensions block file dialogs outright.
+4. Which browser and version.
 
 ## Known gaps (see IMPLEMENTATION_PLAN.md §5 "Explicitly deferred" for the full list)
 
