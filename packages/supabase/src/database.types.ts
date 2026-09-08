@@ -194,10 +194,15 @@ export interface Database {
           title: string;
           description: string | null;
           image_url: string | null;
+          /** What kind of event it is. Separate from event_type below. */
           category: "workshop" | "seminar" | "competition" | "meeting" | null;
+          /** How the site surfaces it: a plain upcoming event, a featured one
+           * (pops up on the homepage), or one with registration open. */
+          event_type: "upcoming" | "featured" | "registration_open";
           event_date: string | null;
           location: string | null;
           registration_url: string | null;
+          facebook_url: string | null;
           sort_order: number;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["events"]["Row"]> & { slug: string; title: string };
