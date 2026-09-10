@@ -1,4 +1,6 @@
 import { getHomeSectionByKey } from "@/lib/content/home-sections";
+import { AboutCounters, getAboutCounters } from "./about-counters";
+import { AboutSliderSection } from "./about-slider-section";
 import { SectionHeading } from "./section-heading";
 
 const defaultBackground =
@@ -6,13 +8,18 @@ const defaultBackground =
 const defaultSecondaryImage =
   "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80";
 
-// Image column first, text panel second, no stat cards — the reference
-// frontend reworked this section in cdbb656 and we follow it. The three
-// stat rows that used to back the removed grid were deleted from
-// home_section_items in migration 0004 so /admin doesn't keep offering
-// cards that render nowhere.
-export async function AboutSection() {
-  const section = await getHomeSectionByKey("about");
+/**
+ * Main image on the left, counters stacked beside it, photo strip underneath.
+ *
+ * `slider` is a prop rather than an internal decision because /about shows the
+ * same strip as its hero and must not repeat it here — the section is rendered
+ * on both routes and only the homepage carries the strip inline.
+ */
+export async function AboutSection({ slider = true }: { slider?: boolean } = {}) {
+  const [section, counters] = await Promise.all([
+    getHomeSectionByKey("about"),
+    getAboutCounters(),
+  ]);
 
   return (
     <section
@@ -30,9 +37,13 @@ export async function AboutSection() {
           title={section?.heading || "About RoboSUST"}
           description={section?.subheading}
         />
-        <div className="grid gap-[18px] md:grid-cols-[1.15fr_0.85fr]">
+
+        {/* Image and counters share a row on desktop and stack on mobile. The
+            image column is the wider of the two: it's the anchor, the counters
+            read fine narrow. */}
+        <div className="grid gap-[18px] lg:grid-cols-[1.35fr_0.65fr]">
           <div
-            className="reveal min-h-[380px] rounded-[22px] border border-white/10 bg-cover bg-center"
+            className="reveal relative min-h-[300px] overflow-hidden rounded-[22px] border border-white/10 bg-cover bg-center lg:min-h-[380px]"
             style={{ backgroundImage: `url('${section?.secondary_image_url || defaultSecondaryImage}')` }}
           >
             <div className="flex h-full items-end">
@@ -41,14 +52,19 @@ export async function AboutSection() {
               </div>
             </div>
           </div>
-          <article className="panel reveal rounded-[22px] border border-white/10 bg-[#0d111a] p-[42px]">
-            <div className="kicker mb-3 text-[11px] uppercase tracking-[0.18em] text-[#8e98aa]">RoboSUST</div>
-            <p className="max-w-[660px] text-[15px] leading-8 text-[#aeb7c7]">
-              {section?.body ||
-                "Fostering innovation across disciplines, the club empowers members to transform theoretical knowledge into real-world technological solutions. Through hands-on workshops, competitive events, and collaborative projects, RoboSUST nurtures the next generation of engineers, coders, and automation enthusiasts, driving technological advancements and representing the university on national and international robotics platforms."}
-            </p>
-          </article>
+
+          <AboutCounters counters={counters} className="flex flex-col gap-[18px]" />
         </div>
+
+        <article className="panel reveal mt-[18px] rounded-[22px] border border-white/10 bg-[#0d111a] p-[30px] sm:p-[42px]">
+          <div className="kicker mb-3 text-[11px] uppercase tracking-[0.18em] text-[#8e98aa]">RoboSUST</div>
+          <p className="max-w-[660px] text-[15px] leading-8 text-[#aeb7c7]">
+            {section?.body ||
+              "Fostering innovation across disciplines, the club empowers members to transform theoretical knowledge into real-world technological solutions. Through hands-on workshops, competitive events, and collaborative projects, RoboSUST nurtures the next generation of engineers, coders, and automation enthusiasts, driving technological advancements and representing the university on national and international robotics platforms."}
+          </p>
+        </article>
+
+        {slider && <AboutSliderSection className="mt-[18px]" />}
       </div>
     </section>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
+import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 export type AchievementSlide = {
   id: string;
@@ -17,26 +18,6 @@ type AchievementSlideshowProps = {
   autoPlay?: boolean;
   interval?: number;
 };
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-// Auto-advancing content is motion — someone who asked the OS for less of it
-// shouldn't get a carousel that moves on its own. useSyncExternalStore rather
-// than an effect + setState: it's the primitive built for subscribing to an
-// external source, it has a real server snapshot (false, so SSR and the first
-// client render agree), and it keeps eslint's react-hooks/set-state-in-effect
-// satisfied instead of suppressed.
-function usePrefersReducedMotion() {
-  return useSyncExternalStore(
-    (onStoreChange) => {
-      const query = window.matchMedia(REDUCED_MOTION_QUERY);
-      query.addEventListener("change", onStoreChange);
-      return () => query.removeEventListener("change", onStoreChange);
-    },
-    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
-    () => false,
-  );
-}
 
 export function AchievementSlideshow({
   slides,

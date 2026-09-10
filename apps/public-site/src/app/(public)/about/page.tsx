@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AboutPrinciplesSection } from "@/components/public/about-principles-section";
 import { AboutSection } from "@/components/public/about-section";
+import { AboutSliderSection } from "@/components/public/about-slider-section";
 import { AchievementsSection } from "@/components/public/achievements-section";
 import { PageIntro } from "@/components/public/page-intro";
 import { getHomeSectionByKey } from "@/lib/content/home-sections";
@@ -31,8 +32,14 @@ export default async function AboutPage() {
         }
         image={intro?.background_image_url || fallbackIntroImage}
       />
+
+      {/* The photo strip belongs to the hero here, not to the About section
+          below — which is why that one is rendered with slider={false}. Same
+          rows, same CMS screen, shown once per page. */}
+      <AboutSliderSection className="container-shell -mt-px pb-4 pt-12" />
+
       <div id="content">
-        <AboutSection />
+        <AboutSection slider={false} />
         <AboutPrinciplesSection />
         <AchievementsSection />
       </div>
