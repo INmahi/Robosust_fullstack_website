@@ -2,6 +2,7 @@
 
 import { createClient as createServerSupabase } from "@robosust/supabase/server";
 import { createAdminClient } from "@robosust/supabase/admin";
+import { getVerifiedUser } from "@robosust/supabase/claims";
 import { redirect } from "next/navigation";
 
 export type LoginResult = { error: string } | { error?: undefined };
@@ -58,10 +59,10 @@ export async function changeOwnPassword(
   }
 
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
+  // The verified claims already carry the email, so this needs no round trip
+  // to the Auth server just to learn who is signed in.
+  const user = await getVerifiedUser(supabase);
   if (!user?.email) {
     return { error: "Not signed in." };
   }

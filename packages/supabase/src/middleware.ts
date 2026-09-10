@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getVerifiedUser } from "./claims";
 import type { Database } from "./database.types";
 
 // Refreshes the Supabase auth cookie on every request so server components
@@ -28,8 +29,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Touches the session so an expired access token gets refreshed.
-  await supabase.auth.getUser();
+  // Touches the session so an expired access token gets refreshed. Verifies
+  // the token locally rather than with auth.getUser(), which would be a network
+  // call to the Auth server on every single matched request — see claims.ts.
+  await getVerifiedUser(supabase);
 
   return response;
 }

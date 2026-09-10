@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient as createServerSupabase } from "@robosust/supabase/server";
+import { getVerifiedUser } from "@robosust/supabase/claims";
 import type { Tables } from "@robosust/supabase/types";
 import { redirect } from "next/navigation";
 
@@ -10,10 +11,11 @@ export type CmsUser = Tables<"cms_users">;
 // the row was deleted by an admin) is treated as logged-out.
 export async function getCmsUser(): Promise<CmsUser | null> {
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
+  // Local token verification, not auth.getUser() — this runs on every request
+  // into /admin, including each RSC prefetch, and getUser() would make it a
+  // round trip to the Auth server every time. See @robosust/supabase/claims.
+  const user = await getVerifiedUser(supabase);
   if (!user) return null;
 
   const { data } = await supabase.from("cms_users").select("*").eq("id", user.id).maybeSingle();
