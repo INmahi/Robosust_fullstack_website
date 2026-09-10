@@ -6,16 +6,26 @@ type PageIntroProps = {
   title: string;
   description?: string | null;
   image: string;
+  /** Make this masthead a scroll-snap target. Only /executive-members needs
+   *  it, and it is not optional there: that page sets `scroll-snap-type: y
+   *  mandatory` on <html>, and mandatory means the browser may not come to
+   *  rest anywhere that isn't a snap point. With the masthead left out, scroll
+   *  position 0 was not a valid stop, so the page force-scrolled past the hero
+   *  to the first wing the moment it loaded — measured at 579px, with no user
+   *  input at all. */
+  snap?: boolean;
 };
 
 // The masthead every page below the homepage opens with (the homepage keeps
 // its own full-height HeroSection instead). Ported from the reference's
 // PageIntro, minus its own pt-[76px] — (public)/layout.tsx already offsets
 // the fixed header on <main>, so repeating it here would double the gap.
-export function PageIntro({ eyebrow, title, description, image }: PageIntroProps) {
+export function PageIntro({ eyebrow, title, description, image, snap = false }: PageIntroProps) {
   return (
     <section
-      className="relative flex min-h-[460px] items-end overflow-hidden border-b border-white/10 bg-cover bg-center"
+      className={`relative flex min-h-[460px] items-end overflow-hidden border-b border-white/10 bg-cover bg-center${
+        snap ? " snap-section" : ""
+      }`}
       style={{
         backgroundImage: `linear-gradient(90deg, rgba(5,7,12,.96), rgba(5,7,12,.55)), url('${image}')`,
       }}

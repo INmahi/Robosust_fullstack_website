@@ -27,6 +27,9 @@ export default async function ExecutiveMembersPage() {
           "Meet the executive team guiding RoboSUST's projects, programs and community. Their job is to keep the lab moving and make room for the next idea."
         }
         image={intro?.background_image_url || fallbackIntroImage}
+        // Required, not cosmetic — see PageIntro's `snap` prop. Without it the
+        // mandatory snapping on this page scrolls straight past the hero.
+        snap
       />
       <MeetTheTeamSection />
     </>
