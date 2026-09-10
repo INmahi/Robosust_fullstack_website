@@ -170,6 +170,34 @@ html.snap-page {
   scroll-snap-stop: always;
 }
 
+/* The homepage events rows come in from the side they sit on, so the image and
+   its details travel toward each other and meet in the middle. That's what makes
+   the left/right alternation read as deliberate rather than as a layout that
+   can't make up its mind. Placed outside @layer utilities, like .reveal-card,
+   so these win over the plain .reveal transform they're paired with. */
+.reveal.reveal-from-left {
+  transform: translateX(-52px);
+}
+
+.reveal.reveal-from-right {
+  transform: translateX(52px);
+}
+
+.reveal.reveal-from-left.show,
+.reveal.reveal-from-right.show {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Motion Sensitivity is a High-severity guideline: present the final state,
+     don't slide it in. Opacity alone still marks the arrival. */
+  .reveal.reveal-from-left,
+  .reveal.reveal-from-right {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+}
+
 /* The site-wide .reveal is a 20px fade — too quiet to read as the wing
    "arriving". Team cards travel further, scale up, and stagger. */
 .reveal.reveal-card {
