@@ -203,8 +203,10 @@ export interface Database {
           /** What kind of event it is. Separate from event_type below. */
           category: "workshop" | "seminar" | "competition" | "meeting" | null;
           /** How the site surfaces it: a plain upcoming event, a featured one
-           * (pops up on the homepage), or one with registration open. */
-          event_type: "upcoming" | "featured" | "registration_open";
+           * (pops up on the homepage), one with registration open, or one
+           * that's over. `past` is a bucket, not date arithmetic — an event can
+           * be finished before its own date, or never have had one. */
+          event_type: "upcoming" | "featured" | "registration_open" | "past";
           event_date: string | null;
           location: string | null;
           registration_url: string | null;

@@ -174,7 +174,7 @@ export const contentTypes: ContentTypeConfig[] = [
         label: "Type (how the site shows it — featured events pop up on the homepage)",
         kind: "select",
         required: true,
-        options: ["upcoming", "featured", "registration_open"],
+        options: ["upcoming", "featured", "registration_open", "past"],
       },
       { key: "event_date", label: "Date", kind: "datetime-local" },
       { key: "location", label: "Location", kind: "text" },
