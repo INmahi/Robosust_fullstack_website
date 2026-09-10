@@ -119,6 +119,12 @@ export interface Database {
           image_url: string | null;
           /** lucide icon name, resolved by components/public/section-icons.ts. */
           icon: string | null;
+          /** Counter target. Set it and the card animates 0 -> count_to on
+           * scroll; null means the card isn't a counter. Kept separate from
+           * `value` because the number has to be arithmetic, not free text. */
+          count_to: number | null;
+          /** Rendered straight after count_to, e.g. "+" or "%". */
+          value_suffix: string | null;
           sort_order: number;
         } & Timestamped;
         Insert: Partial<Database["public"]["Tables"]["home_section_items"]["Row"]> & { section_id: string };
@@ -320,6 +326,22 @@ export interface Database {
           image_url: string;
         };
         Update: Partial<Database["public"]["Tables"]["gallery_images"]["Insert"]>;
+        Relationships: [];
+      };
+      about_slides: {
+        Row: {
+          id: string;
+          image_url: string;
+          caption: string | null;
+          /** The slide that opens centred and full-size. At most one row has
+           * this set — a database trigger clears the others, so picking a new
+           * one behaves like a radio button rather than failing. */
+          is_focal: boolean;
+          visible: boolean;
+          sort_order: number;
+        } & Timestamped;
+        Insert: Partial<Database["public"]["Tables"]["about_slides"]["Row"]> & { image_url: string };
+        Update: Partial<Database["public"]["Tables"]["about_slides"]["Insert"]>;
         Relationships: [];
       };
       agp_blocks: {
