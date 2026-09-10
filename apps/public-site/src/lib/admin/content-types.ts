@@ -324,6 +324,39 @@ export const contentTypes: ContentTypeConfig[] = [
     allowDelete: true,
   },
   {
+    slug: "about-slides",
+    table: "about_slides",
+    label: "About Photo Slider",
+    fields: [
+      {
+        key: "image_url",
+        label: "Photo",
+        kind: "image-url",
+        required: true,
+        recommendedSize: "Landscape, around 1600x1000. The open slide is wide, so portrait photos crop hard.",
+      },
+      { key: "caption", label: "Caption (shown on the open photo only)", kind: "text" },
+      {
+        key: "is_focal",
+        // The "main attraction" control. A boolean rather than a picker on
+        // some other screen because the choice belongs with the photo — and a
+        // database trigger clears the flag from every other row, so ticking a
+        // second one moves the selection instead of erroring.
+        // The table view trims everything from " (" onward, so this reads as
+        // a tidy "Main photo" column header and keeps the full explanation on
+        // the form where an editor actually needs it.
+        label: "Main photo (opens centred; ticking another moves the choice)",
+        kind: "boolean",
+      },
+      { key: "visible", label: "Visible", kind: "boolean" },
+      { key: "sort_order", label: "Sort order", kind: "number" },
+    ],
+    listColumns: ["image_url", "caption", "is_focal", "visible"],
+    sortColumn: "sort_order",
+    allowCreate: true,
+    allowDelete: true,
+  },
+  {
     slug: "gallery-albums",
     table: "gallery_albums",
     label: "Gallery Albums",
@@ -485,8 +518,18 @@ export const contentTypes: ContentTypeConfig[] = [
         required: true,
         reference: { table: "home_sections", labelField: "section_key" },
       },
-      { key: "value", label: "Value (e.g. 12+, 24/7 — used by the Achievements metric cards)", kind: "text" },
       { key: "label", label: "Label / card title", kind: "text" },
+      {
+        key: "count_to",
+        label: "Count up to (About counters — the number, digits only)",
+        kind: "number",
+      },
+      {
+        key: "value_suffix",
+        label: "Suffix after the number (e.g. + or %)",
+        kind: "text",
+      },
+      { key: "value", label: "Value (e.g. 12+, 24/7 — used by the Achievements metric cards)", kind: "text" },
       { key: "body", label: "Body text", kind: "textarea" },
       {
         key: "icon",
@@ -502,7 +545,7 @@ export const contentTypes: ContentTypeConfig[] = [
       },
       { key: "sort_order", label: "Sort order", kind: "number" },
     ],
-    listColumns: ["section_id", "label", "value"],
+    listColumns: ["section_id", "label", "count_to", "value"],
     // Grouped by section, then in card order — otherwise two sections' cards
     // interleave by sort_order and the list is unreadable.
     sortColumn: ["section_id", "sort_order"],

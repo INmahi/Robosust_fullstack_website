@@ -29,7 +29,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Posts & media",
     blurb: "Writing, announcements and photos",
-    slugs: ["blog-posts", "notices", "gallery-albums", "gallery-images"],
+    slugs: ["blog-posts", "notices", "about-slides", "gallery-albums", "gallery-images"],
   },
   {
     label: "Pages & navigation",
