@@ -61,7 +61,7 @@ Fast, local, no LLM/API cost — re-extracts only changed code files. Check stal
 - `supabase/migrations/0001_init.sql` — full Phase 1 schema: every content table, RLS policies, `cms_users`, the `is_cms_user()`/`is_cms_admin()` helper functions, seeded `agp_blocks` rows. **Applied to the live project** (2026-09-04, via Supabase MCP).
 - `supabase/migrations/0002_frontend_fields.sql` — schema additions the reference frontend design needs: `home_sections` gets `eyebrow`/`body`/`secondary_image_url`/`secondary_cta_text`/`secondary_cta_url`; new `home_section_items` table (repeatable stat/metric cards, FK→`home_sections`); `projects.cover_image_url`; `blog_posts.category`; `site_settings` gets `social_instagram`/`social_github`/`footer_note`/`background_image_url`. Applied.
 - `supabase/migrations/0003_baseline_content.sql` — idempotent seed of `site_settings`/`navigation_items`/`home_sections`/`home_section_items` with the reference design's actual copy, so the CMS opens populated rather than blank. Applied.
-- `supabase/migrations/0012_past_events.sql` — a fourth `event_type` bucket, `past`. **The point is that it is not date arithmetic**: an event can be over before its own date (cancelled, rescheduled away) or never have had one, and every listing query filters on `event_date`, so without the bucket an editor couldn't retire a finished event except by deleting it or faking a date. `getEventsForListing()`/`getUpcomingEvents()` exclude it outright; `getPastEvents()` returns it *or* anything whose date has gone by. The constraint is **dropped and recreated**, not added with `if not exists` — 0006 already created it, so a guarded add would skip and silently leave 'past' rejected. **NOT YET APPLIED** — see the note below.
+- `supabase/migrations/0012_past_events.sql` — a fourth `event_type` bucket, `past`. **The point is that it is not date arithmetic**: an event can be over before its own date (cancelled, rescheduled away) or never have had one, and every listing query filters on `event_date`, so without the bucket an editor couldn't retire a finished event except by deleting it or faking a date. `getEventsForListing()`/`getUpcomingEvents()` exclude it outright; `getPastEvents()` returns it *or* anything whose date has gone by. The constraint is **dropped and recreated**, not added with `if not exists` — 0006 already created it, so a guarded add would skip and silently leave 'past' rejected. Applied.
 - `supabase/migrations/0011_about_slider_counters.sql` — the About section's redesign: `home_section_items` gains `count_to` (int) and `value_suffix`, and a new `about_slides` table backs the photo strip. **`count_to` is a real integer rather than reuse of the free-text `value`** because the number is animated from zero — parsing "200+" back out would hold until an editor typed "200 +" or "2k". The counters ride on `home_section_items` instead of a new table because that table already models ordered repeatable cards belonging to a section, so the existing Section Cards screen covers them with no new admin page. `about_slides.is_focal` marks the photo that opens centred, and **a trigger (`about_slides_single_focal`) clears the flag from every other row** rather than a partial unique index — picking a second "main" photo should move the choice like a radio button, not fail with a constraint error. Seeds the three counters from the design, guarded on the label not already existing. Applied.
 - `supabase/migrations/0010_recruitment.sql` — `recruitment`, a **singleton** (`id = true`, same shape as `site_settings`) holding `status` (`running`/`opening_soon`/`closed`, check-constrained in the database because an unrecognised value would fall through the Join Us page's switch and render nothing), `closes_on`, `opens_on`, `registration_url`, `note`. Two date columns because which one an editor fills depends on the status: `closes_on` is the deadline while running, `opens_on` is the start date when opening soon and the next possible intake when closed. Both nullable — "opening soon, date to be confirmed" is a real state. No delete policy: there's nothing to delete, and losing the row would leave Join Us with no status. Applied.
 - `supabase/migrations/0009_nav_restructure.sql` — primary nav takes the agreed order and `Committee` becomes `Executives`; Forum moves into `more`, the group that had been in `0001`'s check constraint since the start but never populated. Items there are parked on url `#` and the header renders them as a dimmed "Soon" row rather than a link, so the menu can show the whole sitemap without shipping links to 404s — give one a real URL in /admin and it becomes a normal link. **"Join Us" is deliberately not a `navigation_items` row**: it's a fixed structural CTA with its own route, the same category as the wordmark. Applied.
@@ -178,24 +178,6 @@ Each of the four uses `buildPageMetadata()` against its own `seo_metadata` row. 
 2. **DevTools console output at the moment of the click**, plus the Network tab — a failed JS chunk would explain it, and would also break the thumbnail preview and the "Uploading…" state.
 3. **Incognito with extensions disabled** — some privacy extensions block file dialogs outright.
 4. Which browser and version.
-
-## Pending: migration 0012 is written but not applied
-
-`supabase/migrations/0012_past_events.sql` has not been run against the live
-project. The Supabase MCP server was disconnected in the session that wrote it
-and no `psql`, Supabase CLI or database password was available on the machine,
-so the DDL could not be executed. Everything on the code side is in place — the
-`past` option is already in the /admin dropdown and the queries already exclude
-it — which means **choosing "past" in /admin will fail with a check-constraint
-error until this is run.** One statement, in the Supabase SQL editor:
-
-```sql
-alter table public.events drop constraint if exists events_event_type_check;
-alter table public.events add constraint events_event_type_check
-  check (event_type in ('upcoming', 'featured', 'registration_open', 'past'));
-```
-
-Delete this section once it's applied.
 
 ## Known gaps (see IMPLEMENTATION_PLAN.md §5 "Explicitly deferred" for the full list)
 
