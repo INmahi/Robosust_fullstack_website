@@ -11,11 +11,16 @@ const defaultSecondaryImage =
 /**
  * Main image on the left, counters stacked beside it, photo strip underneath.
  *
- * `slider` is a prop rather than an internal decision because /about shows the
- * same strip as its hero and must not repeat it here — the section is rendered
- * on both routes and only the homepage carries the strip inline.
+ * Both flags exist because this one section is rendered on two routes that want
+ * different halves of it, and a Server Component can't tell which route it is
+ * on. The homepage takes the defaults — image, counters and strip, no prose.
+ * /about turns the prose on and the strip off, because there the strip is the
+ * page's hero and would otherwise appear twice.
  */
-export async function AboutSection({ slider = true }: { slider?: boolean } = {}) {
+export async function AboutSection({
+  slider = true,
+  body = false,
+}: { slider?: boolean; body?: boolean } = {}) {
   const [section, counters] = await Promise.all([
     getHomeSectionByKey("about"),
     getAboutCounters(),
@@ -56,13 +61,15 @@ export async function AboutSection({ slider = true }: { slider?: boolean } = {})
           <AboutCounters counters={counters} className="flex flex-col gap-[18px]" />
         </div>
 
-        <article className="panel reveal mt-[18px] rounded-[22px] border border-white/10 bg-[#0d111a] p-[30px] sm:p-[42px]">
-          <div className="kicker mb-3 text-[11px] uppercase tracking-[0.18em] text-[#8e98aa]">RoboSUST</div>
-          <p className="max-w-[660px] text-[15px] leading-8 text-[#aeb7c7]">
-            {section?.body ||
-              "Fostering innovation across disciplines, the club empowers members to transform theoretical knowledge into real-world technological solutions. Through hands-on workshops, competitive events, and collaborative projects, RoboSUST nurtures the next generation of engineers, coders, and automation enthusiasts, driving technological advancements and representing the university on national and international robotics platforms."}
-          </p>
-        </article>
+        {body && (
+          <article className="panel reveal mt-[18px] rounded-[22px] border border-white/10 bg-[#0d111a] p-[30px] sm:p-[42px]">
+            <div className="kicker mb-3 text-[11px] uppercase tracking-[0.18em] text-[#8e98aa]">RoboSUST</div>
+            <p className="max-w-[660px] text-[15px] leading-8 text-[#aeb7c7]">
+              {section?.body ||
+                "Fostering innovation across disciplines, the club empowers members to transform theoretical knowledge into real-world technological solutions. Through hands-on workshops, competitive events, and collaborative projects, RoboSUST nurtures the next generation of engineers, coders, and automation enthusiasts, driving technological advancements and representing the university on national and international robotics platforms."}
+            </p>
+          </article>
+        )}
 
         {slider && <AboutSliderSection className="mt-[18px]" />}
       </div>

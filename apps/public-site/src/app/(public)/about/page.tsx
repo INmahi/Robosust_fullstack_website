@@ -39,7 +39,7 @@ export default async function AboutPage() {
       <AboutSliderSection className="container-shell -mt-px pb-4 pt-12" />
 
       <div id="content">
-        <AboutSection slider={false} />
+        <AboutSection slider={false} body />
         <AboutPrinciplesSection />
         <AchievementsSection />
       </div>
