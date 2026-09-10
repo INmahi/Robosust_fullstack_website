@@ -18,7 +18,6 @@ export async function FeaturedEventAlert() {
       event={{
         id: event.id,
         title: event.title,
-        description: event.description,
         imageUrl: event.image_url,
         dateLabel: formatEventDate(event.event_date),
         location: event.location,
