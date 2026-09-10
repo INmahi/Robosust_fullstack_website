@@ -25,6 +25,13 @@ function NavLink({
   return (
     <Link
       href={href}
+      // The sidebar carries 24 links and the dashboard ~19 more. Left to
+      // prefetch, every one fires an RSC request the moment it enters the
+      // viewport, and each of those re-runs this layout's auth check against
+      // Supabase — measured at ~26 extra round trips per admin page load,
+      // which is what made signing in feel slow. Admin navigation is a few
+      // hundred ms without them; the storm cost seconds.
+      prefetch={false}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${

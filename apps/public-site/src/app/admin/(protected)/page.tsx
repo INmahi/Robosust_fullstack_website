@@ -31,6 +31,8 @@ export default function AdminDashboardPage() {
                   <Link
                     key={type.slug}
                     href={`/admin/${type.slug}`}
+                    // Same reason as the sidebar's links — see admin-nav.tsx.
+                    prefetch={false}
                     className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/40"
                   >
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-blue-100 group-hover:text-blue-600">
