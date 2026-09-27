@@ -227,10 +227,15 @@ html.snap-page {
   }
 }
 
+#upcoming-events > .container-shell {
+  overflow-x: hidden;
+}
+
 @layer utilities {
   .container-shell {
     width: min(1240px, calc(100% - 40px));
     margin-inline: auto;
+
   }
 
   .reveal {
